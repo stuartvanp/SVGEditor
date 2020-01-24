@@ -25,14 +25,19 @@ SVGimage* createSVGimage(char* fileName){
 
     doc = xmlReadFile(fileName, NULL, 0);
         if (doc == NULL) {
+            printf("COULD NOT OPEN0000000000000000000000000000000");
+            xmlFreeDoc(doc);
+            xmlCleanupParser();
             return NULL;
         }
     root = xmlDocGetRootElement(doc);
     
     if (root == NULL){
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
         return NULL;
     }
-    print_element_names(root);   
+    //print_element_names(root);   
     SVGimage * svg = malloc(sizeof(SVGimage)); 
     addNameSpace(svg, root);
 
@@ -40,7 +45,7 @@ SVGimage* createSVGimage(char* fileName){
  //   svg->circles = initializeList(circleToString, deleteCircle, compareCircles);
  //   svg->rectangles = initializeList(rectangleToString, deleteRectangle, compareRectangles);
  //   svg->groups = initializeList(rectangleToString, deleteRectangle, compareRectangles);
- //   svg->paths = initializeList(pathToString, deletePath, comparePaths);
+    svg->paths = initializeList(pathToString, deletePath, comparePaths);
  
     addAttributes(addAttributesSVG, svg, root);
     addPaths(svg, root);
@@ -67,13 +72,23 @@ char* SVGimageToString(SVGimage* img){
     toAdd = toString(img->otherAttributes);   //gets a string describing the attributes and adds it to string
     string = realloc(string, strlen(string) + strlen(toAdd) + 100);
     strcat(string, toAdd);    
-    free(toAdd);                     //frees string of attributes bc it was added to main string which was reallocated
+    free(toAdd);                    //frees string of attributes bc it was added to main string which was reallocated
 
+    
+    toAdd = toString(img->paths);       //gets a string describing paths and adds it  
+    string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 100));
+    strcat(string, toAdd);
+    free(toAdd);                    //frees OG path string
+    
     return string;
 }
 
 void deleteSVGimage(SVGimage* img){
+    if (img == NULL) {
+        return;
+    }
     freeList(img->otherAttributes);
+    freeList(img->paths);
     free(img);
 
     return;
@@ -130,10 +145,29 @@ int compareCircles(const void *first, const void *second){
 }
 
 void deletePath(void* data){
+    Path * pth = data;
+    
+    freeList(pth->otherAttributes);
+    free(pth->data);
+    free(pth);
     return;
 }
+
+
 char* pathToString(void* data){
-    return "A";
+    Path * pth = data;
+    char * toAdd = NULL;
+    char * string = NULL;
+
+    int length = strlen("Path:\n\tAttributes:\n\tData: ") + strlen(pth->data) + 50;
+    string = malloc(sizeof(char) * length);
+    sprintf(string, "Path:\n\tData: %s\n\n\tAttributes:\n", pth->data);
+    toAdd = toString(pth->otherAttributes);
+    string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
+    strcat(string, toAdd);
+    free(toAdd);
+
+    return string;
 }
 int comparePaths(const void *first, const void *second){
     return 0;
@@ -193,35 +227,41 @@ void addAttributesSVG(void * myStructure, Attribute * toAdd){
     return;
 }
 
- void addPaths(SVGimage * svg, xmlNode * node) {
+void addPaths(SVGimage * svg, xmlNode * node) {
     Path * addPath;
     Attribute * otherAtt;
     
-    for (xmlNode * mover = node->children; mover != NULL; mover = mover->next){ //iterates through the elements
+    for (xmlNode * mover = node->children; mover != NULL; mover = mover->next){ //iterates through the elements of xmltree 
         addPath = NULL;
-        if (strcmp((char*)mover->name, "path") == 0) { //finds the paths
+        
+        if (strcmp((char*)mover->name, "path") == 0) { //if a path is found
             addPath = malloc(sizeof(Path));                  //creates struct
-            addPath->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);         //initializes list    
-            for (xmlAttr * attrib = mover->properties; attrib != NULL; attrib = attrib->next ){ //finds the important attributes
-                if (strcmp((char*)attrib->name, "d") == 0){
-                    printf("%s******\n", attrib->children->content);
-                    addPath->data = malloc(sizeof(char) * (strlen((char *)attrib->children->content) + 1));
-                    strcpy(addPath->data, (char *) attrib->children->content);
-                    printf("%s\n", addPath->data);
+            addPath->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);         //initializes list of otherAtttributes
+
+            for (xmlAttr * attrib = mover->properties; attrib != NULL; attrib = attrib->next ){ //iterates through the attributes
+            
+                if (strcmp((char*)attrib->name, "d") == 0){                 //d is the only important attribute
+                    addPath->data = malloc(sizeof(char) * (strlen((char *)attrib->children->content) + 1));  //malllocs memory for data
+                    strcpy(addPath->data, (char *) attrib->children->content);   //copies in data
                 }
-                else{
-                    printf("%s***%s***\n", attrib->name, attrib->children->content);
-                    otherAtt->name = malloc(sizeof(char) * (strlen((char *) attrib->children->content) + 1));
-                    strcpy(otherAtt->name, )l2efmwekmfpewkfmpek2fm
+                else{  //handling for otherAttributes
+                    otherAtt = malloc(sizeof(Attribute));    //malloc attribute struct
+                    otherAtt->name = malloc(sizeof(char) * (strlen((char *) attrib->name) + 1)); //malloc and copy attrib name
+                    strcpy(otherAtt->name, (char *)attrib->name );
+                    otherAtt->value = malloc (sizeof(char) * (strlen((char *) attrib->children->content) + 1));  //malloc and copy attrib value
+                    strcpy(otherAtt->value, (char *) attrib->children->content);
+                    insertBack(addPath->otherAttributes, otherAtt);  //insert attribut struct into list otherattributes of path struct
                 } 
             }
-            
-           // printf("****%s*****", (char *) mover->name);
-           // printf("*****%s*****", mover->properties->children->content);
+            insertBack(svg->paths, addPath);
         }
     }
 } 
-
+/* 
+void addCircles(SVGimage * svg, xmlNode * node) {
+    for (xmlNode * mover = node; mover != NULL; mover = node->)
+}
+ */
 static void print_element_names(xmlNode * a_node) {
     xmlNode *cur_node = NULL;
 
@@ -254,12 +294,15 @@ int main (int argc, char **argv) {
     SVGimage * svg = createSVGimage(argv[1]);
     if (svg == NULL) {
         printf("invalid SVG");
-
+        //return 0;
     }
+
     char * string = SVGimageToString(svg);
-    printf("%s\n", string);
-    free(string);
+  //  printf("%s\n", string);
+  //  free(string);
+
     deleteSVGimage(svg);
+
 
     return 0;
 }

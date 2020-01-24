@@ -23,7 +23,7 @@ buildTest: $(SRC)SVGParser.c $(INC)LinkedListAPI.h $(INC)SVGParser.h
 	gcc -Wall -std=c11 -g -I$(XML_PATH) -I$(INC) $(SRC)SVGParser.c -lxml2 -o $(SRC)Testing bin/LinkedListAPI.o
 
 runTest: $(SRC)Testing
-	./src/Testing quad01.svg
+	./src/Testing rect_with_units.svg
 
 valTest: $(SRC)Testing
-	valgrind -v ./src/Testing quad01.svg
+	valgrind -v ./src/Testing rect_with_units.svg
