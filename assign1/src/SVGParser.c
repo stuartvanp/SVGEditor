@@ -43,7 +43,7 @@ SVGimage* createSVGimage(char* fileName){
  //   svg->paths = initializeList(pathToString, deletePath, comparePaths);
  
     addAttributes(addAttributesSVG, svg, root);
-    
+    addPaths(svg, root);
     xmlFreeDoc(doc);
     xmlCleanupParser();
     return svg;   
@@ -169,6 +169,7 @@ void addNameSpace(SVGimage * svg, xmlNode * root) {
 }
 
 //finds the attributes of a specific xml node, adds them too attributes list in SVG header
+//function pointer is for what kind of structure the attributes are being added to, these functions are below
 void addAttributes( void (addToList)(void * myStructure, Attribute * toAdd), void * structure, xmlNode * node){ 
     xmlAttr * xmlattribute = NULL;
     Attribute * newAtt = NULL;   
@@ -176,10 +177,10 @@ void addAttributes( void (addToList)(void * myStructure, Attribute * toAdd), voi
         newAtt = NULL;
         newAtt = malloc(sizeof(Attribute));  //creates struct
         newAtt->name = malloc(sizeof(char) * (strlen((char *)xmlattribute->name) + 1));
-        newAtt->name = strcpy(newAtt->name, (char *)xmlattribute->name); //copies name over
+        strcpy(newAtt->name, (char *)xmlattribute->name); //copies name over
 
         newAtt->value = malloc(sizeof(char) * (strlen((char *)xmlattribute->children->content) + 1));
-        newAtt->value = strcpy(newAtt->value, (char *)xmlattribute->children->content); //copies value over
+        strcpy(newAtt->value, (char *)xmlattribute->children->content); //copies value over
         
         addToList(structure, newAtt);
         //insertBack(svg->otherAttributes, newAtt); //inserts struct into svg struct list
@@ -192,11 +193,34 @@ void addAttributesSVG(void * myStructure, Attribute * toAdd){
     return;
 }
 
-/* void addPaths(SVGimage * svg, xmlNode * node) {
-    for (xmlNode * mover = node->children;)
-
+ void addPaths(SVGimage * svg, xmlNode * node) {
+    Path * addPath;
+    Attribute * otherAtt;
     
-} */
+    for (xmlNode * mover = node->children; mover != NULL; mover = mover->next){ //iterates through the elements
+        addPath = NULL;
+        if (strcmp((char*)mover->name, "path") == 0) { //finds the paths
+            addPath = malloc(sizeof(Path));                  //creates struct
+            addPath->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);         //initializes list    
+            for (xmlAttr * attrib = mover->properties; attrib != NULL; attrib = attrib->next ){ //finds the important attributes
+                if (strcmp((char*)attrib->name, "d") == 0){
+                    printf("%s******\n", attrib->children->content);
+                    addPath->data = malloc(sizeof(char) * (strlen((char *)attrib->children->content) + 1));
+                    strcpy(addPath->data, (char *) attrib->children->content);
+                    printf("%s\n", addPath->data);
+                }
+                else{
+                    printf("%s***%s***\n", attrib->name, attrib->children->content);
+                    otherAtt->name = malloc(sizeof(char) * (strlen((char *) attrib->children->content) + 1));
+                    strcpy(otherAtt->name, )l2efmwekmfpewkfmpek2fm
+                } 
+            }
+            
+           // printf("****%s*****", (char *) mover->name);
+           // printf("*****%s*****", mover->properties->children->content);
+        }
+    }
+} 
 
 static void print_element_names(xmlNode * a_node) {
     xmlNode *cur_node = NULL;
