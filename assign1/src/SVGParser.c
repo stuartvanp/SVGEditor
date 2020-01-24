@@ -9,7 +9,10 @@
 
 xmlNode * openXml(char* fileName, xmlDoc * doc);
 static void print_element_names(xmlNode * a_node);
-void addAttributesSVG(SVGimage * svg, xmlNode * node);
+
+void addAttributes( void (addToList)(void * myStructure, Attribute * toAdd), void * structure, xmlNode * node);
+void addAttributesSVG(void * myStructure, Attribute *toAdd);
+
 void addNameSpace(SVGimage * svg, xmlNode * root);
 void addPaths(SVGimage * svg, xmlNode * node);
 
@@ -39,7 +42,7 @@ SVGimage* createSVGimage(char* fileName){
  //   svg->groups = initializeList(rectangleToString, deleteRectangle, compareRectangles);
  //   svg->paths = initializeList(pathToString, deletePath, comparePaths);
  
-    addAttributesSVG(svg, root);
+    addAttributes(addAttributesSVG, svg, root);
     
     xmlFreeDoc(doc);
     xmlCleanupParser();
@@ -166,7 +169,7 @@ void addNameSpace(SVGimage * svg, xmlNode * root) {
 }
 
 //finds the attributes of a specific xml node, adds them too attributes list in SVG header
-void addAttributesSVG(SVGimage * svg, xmlNode * node){ 
+void addAttributes( void (addToList)(void * myStructure, Attribute * toAdd), void * structure, xmlNode * node){ 
     xmlAttr * xmlattribute = NULL;
     Attribute * newAtt = NULL;   
     for (xmlattribute = node->properties; xmlattribute != NULL; xmlattribute = xmlattribute->next ){ //iterates through the nodes attributes
@@ -177,8 +180,16 @@ void addAttributesSVG(SVGimage * svg, xmlNode * node){
 
         newAtt->value = malloc(sizeof(char) * (strlen((char *)xmlattribute->children->content) + 1));
         newAtt->value = strcpy(newAtt->value, (char *)xmlattribute->children->content); //copies value over
-        insertBack(svg->otherAttributes, newAtt); //inserts struct into svg struct list
+        
+        addToList(structure, newAtt);
+        //insertBack(svg->otherAttributes, newAtt); //inserts struct into svg struct list
     }
+}
+
+void addAttributesSVG(void * myStructure, Attribute * toAdd){
+    SVGimage * svg = myStructure;
+    insertBack(svg->otherAttributes, toAdd );
+    return;
 }
 
 /* void addPaths(SVGimage * svg, xmlNode * node) {
