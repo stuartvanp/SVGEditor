@@ -13,7 +13,7 @@ static void print_element_names(xmlNode * a_node);
 
 void addAttributes( void (addToList)(void * myStructure, Attribute * toAdd), void * structure, xmlNode * node);
 void addAttributesSVG(void * myStructure, Attribute *toAdd);
-//void addCircles(SVGimage * svg, xmlNode * node);
+void addCircles(SVGimage * svg, xmlNode * node);
 void addRectangles(SVGimage * svg, xmlNode * node);
 
 float getValue(xmlChar * valStr);
@@ -24,9 +24,7 @@ void addPaths(SVGimage * svg, xmlNode * node);
 
 SVGimage* createSVGimage(char* fileName){
     xmlDoc * doc = NULL;
-
     xmlNode* root = NULL;
-
     LIBXML_TEST_VERSION
 
     doc = xmlReadFile(fileName, NULL, 0);
@@ -47,14 +45,14 @@ SVGimage* createSVGimage(char* fileName){
     addNameSpace(svg, root);
 
     svg->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
- //   svg->circles = initializeList(circleToString, deleteCircle, compareCircles);
+    svg->circles = initializeList(circleToString, deleteCircle, compareCircles);
     svg->rectangles = initializeList(rectangleToString, deleteRectangle, compareRectangles);
  //   svg->groups = initializeList(rectangleToString, deleteRectangle, compareRectangles);
     svg->paths = initializeList(pathToString, deletePath, comparePaths);
  
     addAttributes(addAttributesSVG, svg, root);
     addPaths(svg, root);
-    //addCircles(svg, root);
+    addCircles(svg, root);
     addRectangles(svg, root);
     xmlFreeDoc(doc);
     xmlCleanupParser();
@@ -92,6 +90,12 @@ char* SVGimageToString(SVGimage* img){
     strcat(string, toAdd);
     free(toAdd); 
 
+    toAdd = toString(img->circles);
+    string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
+    strcat(string, toAdd);
+    free(toAdd);
+
+
     
     return string;
 }
@@ -105,6 +109,7 @@ void deleteSVGimage(SVGimage* img){
     freeList(img->otherAttributes);
     freeList(img->paths);
     freeList(img->rectangles);
+    freeList(img->circles);
     free(img);
 
     return;
@@ -235,23 +240,65 @@ int compareRectangles(const void *first, const void *second){
     return 0;
 }
 
-/* void addCircles(SVGimage * svg, xmlNode * node) {
+void addCircles(SVGimage * svg, xmlNode * node) {
     Circle * circ = NULL;
-    for (xmlNode * mover = node->children; mover != NULL; mover = mover->next) {
-        if (strcmp((char *) mover->name, "circle") == 0) {
-            printf("FOUND CIRCLE %s", mover->name);
+    Attribute * otherAtt = NULL; 
+             
+    for (xmlNode * mover = node->children; mover != NULL; mover = mover->next) { //moves through the SVG elements
+        circ = NULL;
 
+        if (strcmp((char *) mover->name, "circle") == 0) {  //finds a circle, mallocs
+            
+            circ = malloc(sizeof(Circle));
+            circ->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
+            
+            for (xmlAttr * attrib = mover->properties; attrib != NULL; attrib = attrib->next ){  //moves throught the circles attributes
+                otherAtt = NULL;
+            
+                if (strcmp((char *)attrib->name, "cx") == 0) {   //finds the cx value
+                    circ->cx = getValue(attrib->children->content);
+                    getUnits(attrib->children->content, circ->units);  //gets units
+                }
+                else if (strcmp((char*)attrib->name, "cy") == 0){  //finds the cy value
+                    circ->cy = getValue(attrib->children->content);
+                }
+                else if (strcmp((char*)attrib->name, "r") == 0){   //finds the r value
+                    circ->r = getValue(attrib->children->content);
+                }
+                else{
+                    otherAtt = malloc(sizeof(Attribute));       //handles other attributes
+                    otherAtt->name = malloc(sizeof(char) * (strlen((char *) attrib->name) + 1));  //malloc and copies names
+                    strcpy(otherAtt->name, (char*)attrib->name);
+                    otherAtt->value = malloc(sizeof(char) * (strlen((char *)attrib->children->content) + 1)); //malloc and copies value
+                    strcpy(otherAtt->value, (char*) attrib->children->content);
+                    insertBack(circ->otherAttributes, otherAtt);   //puts em in a mf list
+                }
+            }
+            insertBack(svg->circles, circ); //inserts circle into list
         }
 
     }
-
-} */
+} 
 
 void deleteCircle(void* data){
+    Circle * circ = data;
+    freeList(circ->otherAttributes);
+    free(circ);
+
     return;
 }
 char* circleToString(void* data){
-    return "A";
+    Circle * circ = data;
+    char * string = NULL;
+    char * toAdd = NULL;
+    string = malloc (sizeof(char *) * 300);
+    sprintf(string, "Circle:\n\tCX: %lf\n\n\tCY: %lf\n\n\tR: %lf\n\n\tUnits: %s\n\n\tOther Attributes:\n", circ->cx, circ->cy, circ->r, circ->units);
+    toAdd = toString(circ->otherAttributes);
+    string = realloc(string, sizeof(char *)  * (strlen(toAdd) + strlen(string) + 1));
+    strcat(string, toAdd);
+    free(toAdd);
+    printf("%s", string);
+    return string;
 }
 int compareCircles(const void *first, const void *second){
     return 0;
