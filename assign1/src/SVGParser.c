@@ -8,16 +8,13 @@
 #include <ctype.h>
 
 
-xmlNode * openXml(char* fileName, xmlDoc * doc);
-static void print_element_names(xmlNode * a_node);
 
 void addAttributes(SVGimage * svg, xmlNode * node);
 
-void addCircles(SVGimage * svg, xmlNode * node);
+void addCircles(Group * grp, SVGimage * svg, xmlNode * node);
 void addRectangles(SVGimage * svg, xmlNode * node);
 void AddGroupsSVG(SVGimage * svg, xmlNode * node);
 
-void addPathsToGroup(Group * grp, xmlNode * node);
 void addCirclesToGroup(Group * grp, xmlNode * node);
 void addRectanglesToGroup(Group * grp, xmlNode * node);
 void AddGroupsToGroup(Group * mygrp, xmlNode * node);
@@ -26,7 +23,7 @@ float getValue(xmlChar * valStr);
 void getUnits(xmlChar * valStr, char * toCopy);
 
 void addNameSpace(SVGimage * svg, xmlNode * root);
-void addPaths(SVGimage * svg, xmlNode * node);
+void addPaths(Group * grp, SVGimage * svg, xmlNode * node);
 
 SVGimage* createSVGimage(char* fileName){
     xmlDoc * doc = NULL;
@@ -56,8 +53,8 @@ SVGimage* createSVGimage(char* fileName){
     svg->paths = initializeList(pathToString, deletePath, comparePaths);
  
     addAttributes(svg, root);
-    addPaths(svg, root);
-    addCircles(svg, root);
+    addPaths(NULL, svg, root);
+    addCircles(NULL, svg, root);
     addRectangles(svg, root);
     AddGroupsSVG(svg, root);
     xmlFreeDoc(doc);
@@ -219,8 +216,8 @@ void AddGroupsSVG(SVGimage * svg, xmlNode * node){
                 strcpy(otherAtt->value, (char*)attrib->children->content);
                 insertBack(grp->otherAttributes, otherAtt);
             }
-            addPathsToGroup(grp, mover);
-            addCirclesToGroup(grp, mover);
+            addPaths(grp, NULL, mover);
+            addCircles(grp, NULL, mover);
             addRectanglesToGroup(grp, mover);
             AddGroupsToGroup(grp, mover);
 
@@ -252,8 +249,8 @@ void AddGroupsToGroup(Group * mygrp, xmlNode * node){
                 strcpy(otherAtt->value, (char*)attrib->children->content);
                 insertBack(grp->otherAttributes, otherAtt);
             }
-            addPathsToGroup(grp, mover);
-            addCirclesToGroup(grp, mover);
+            addPaths(grp, NULL, mover);
+            addCircles(grp, NULL, mover);
             addRectanglesToGroup(grp, mover);
             AddGroupsToGroup(grp, mover);
 
@@ -311,36 +308,6 @@ void addCirclesToGroup(Group * grp, xmlNode * node) {
     }
 } 
 
-void addPathsToGroup(Group * grp, xmlNode * node) {
-    Path * addPath;
-    Attribute * otherAtt;
-    
-    for (xmlNode * mover = node->children; mover != NULL; mover = mover->next){ //iterates through the elements of xmltree 
-        addPath = NULL;
-        
-        if (strcmp((char*)mover->name, "path") == 0) { //if a path is found
-            addPath = malloc(sizeof(Path));                  //creates struct
-            addPath->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);         //initializes list of otherAtttributes
-
-            for (xmlAttr * attrib = mover->properties; attrib != NULL; attrib = attrib->next ){ //iterates through the attributes
-            
-                if (strcmp((char*)attrib->name, "d") == 0){                 //d is the only important attribute
-                    addPath->data = malloc(sizeof(char) * (strlen((char *)attrib->children->content) + 1));  //malllocs memory for data
-                    strcpy(addPath->data, (char *) attrib->children->content);   //copies in data
-                }
-                else{  //handling for otherAttributes
-                    otherAtt = malloc(sizeof(Attribute));    //malloc attribute struct
-                    otherAtt->name = malloc(sizeof(char) * (strlen((char *) attrib->name) + 1)); //malloc and copy attrib name
-                    strcpy(otherAtt->name, (char *)attrib->name );
-                    otherAtt->value = malloc (sizeof(char) * (strlen((char *) attrib->children->content) + 1));  //malloc and copy attrib value
-                    strcpy(otherAtt->value, (char *) attrib->children->content);
-                    insertBack(addPath->otherAttributes, otherAtt);  //insert attribut struct into list otherattributes of path struct
-                } 
-            }
-            insertBack(grp->paths, addPath);
-        }
-    }
-} 
 
 void addRectanglesToGroup(Group * grp, xmlNode * node) {
     Rectangle * rect = NULL;
@@ -511,7 +478,7 @@ int compareRectangles(const void *first, const void *second){
     return 0;
 }
 //adds circles to svg struct
-void addCircles(SVGimage * svg, xmlNode * node) {
+void addCircles(Group * grp, SVGimage * svg, xmlNode * node) {
     Circle * circ = NULL;
     Attribute * otherAtt = NULL; 
              
@@ -554,8 +521,14 @@ void addCircles(SVGimage * svg, xmlNode * node) {
                     insertBack(circ->otherAttributes, otherAtt);   //puts em in a mf list
                 }
             }
-            insertBack(svg->circles, circ); //inserts circle into list
+            if (svg == NULL){
+                insertBack(grp->circles, circ); //inserts circle into list
+            }
+            else if (grp == NULL) {
+                insertBack(svg->circles, circ);
+            }
         }
+
 
     }
 } 
@@ -661,7 +634,7 @@ void addAttributes(SVGimage * svg, xmlNode * node){
     }
 }
 
-void addPaths(SVGimage * svg, xmlNode * node) {
+void addPaths(Group * grp, SVGimage * svg, xmlNode * node) {
     Path * addPath;
     Attribute * otherAtt;
     
@@ -687,39 +660,17 @@ void addPaths(SVGimage * svg, xmlNode * node) {
                     insertBack(addPath->otherAttributes, otherAtt);  //insert attribut struct into list otherattributes of path struct
                 } 
             }
-            insertBack(svg->paths, addPath);
+            if (svg == NULL) {
+                insertBack(grp->paths, addPath);
+            }
+            else if (grp == NULL){
+                insertBack(svg->paths, addPath);
+            }
         }
     }
 } 
 
  
-static void print_element_names(xmlNode * a_node) {
-    xmlNode *cur_node = NULL;
-
-    for (cur_node = a_node; cur_node != NULL; cur_node = cur_node->next) {
-        if (cur_node->type == XML_ELEMENT_NODE) {
-            printf("node type: Element, name: %s\n", cur_node->name);
-        }
-
-        // Uncomment the code below if you want to see the content of every node.
-
-        if (cur_node->content != NULL ){
-            printf("  content: %s\n", cur_node->content);
-        }
-
-        // Iterate through every attribute of the current node
-        xmlAttr *attr;
-        for (attr = cur_node->properties; attr != NULL; attr = attr->next)
-        {
-            xmlNode *value = attr->children;
-            char *attrName = (char *)attr->name;
-            char *cont = (char *)(value->content);
-            printf("\tattribute name: %s, attribute value = %s\n", attrName, cont);
-        }
-
-        print_element_names(cur_node->children);
-    }
-}
 
 int main (int argc, char **argv) {
     SVGimage * svg = createSVGimage(argv[1]);
