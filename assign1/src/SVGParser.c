@@ -20,6 +20,7 @@ void AddGroupsSVG(SVGimage * svg, xmlNode * node);
 void addPathsToGroup(Group * grp, xmlNode * node);
 void addCirclesToGroup(Group * grp, xmlNode * node);
 void addRectanglesToGroup(Group * grp, xmlNode * node);
+void AddGroupsToGroup(Group * mygrp, xmlNode * node);
 
 float getValue(xmlChar * valStr);
 void getUnits(xmlChar * valStr, char * toCopy);
@@ -45,7 +46,6 @@ SVGimage* createSVGimage(char* fileName){
         xmlCleanupParser();
         return NULL;
     }
-    //print_element_names(root);   
     SVGimage * svg = malloc(sizeof(SVGimage)); 
     addNameSpace(svg, root);
 
@@ -153,6 +153,7 @@ void deleteGroup(void* data){
     freeList(grp->paths);
     freeList(grp->circles);
     freeList(grp->rectangles);
+    freeList(grp->groups);
     free(grp);
     return;
 }
@@ -182,6 +183,11 @@ char* groupToString( void* data){
     strcat(string, toAdd);
     free(toAdd);
 
+    toAdd = toString(grp->groups);
+    string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
+    strcat(string, toAdd);
+    free(toAdd);
+
     strcat(string, "Group: <close>\n");
     //printf("%s", string);
     return string;
@@ -203,6 +209,7 @@ void AddGroupsSVG(SVGimage * svg, xmlNode * node){
             grp->paths = initializeList(pathToString, deletePath, comparePaths);
             grp->circles = initializeList(circleToString, deleteCircle, compareCircles);
             grp->rectangles = initializeList(rectangleToString, deleteRectangle, compareRectangles);
+            grp->groups = initializeList(groupToString, deleteGroup, compareGroups);
             
             for (xmlAttr * attrib = mover->properties; attrib != NULL; attrib = attrib->next) {
                 Attribute * otherAtt = NULL;
@@ -216,8 +223,42 @@ void AddGroupsSVG(SVGimage * svg, xmlNode * node){
             addPathsToGroup(grp, mover);
             addCirclesToGroup(grp, mover);
             addRectanglesToGroup(grp, mover);
+            AddGroupsToGroup(grp, mover);
 
             insertBack(svg->groups, grp);
+        }
+    }
+}
+
+void AddGroupsToGroup(Group * mygrp, xmlNode * node){
+    Group * grp = NULL;
+
+    for (xmlNode *mover = node ->children; mover != NULL; mover = mover->next) {
+        grp = NULL;
+        if (strcmp((char*)mover->name, "g") == 0){
+            grp = malloc(sizeof(Group));
+            grp->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
+            grp->paths = initializeList(pathToString, deletePath, comparePaths);
+            grp->circles = initializeList(circleToString, deleteCircle, compareCircles);
+            grp->rectangles = initializeList(rectangleToString, deleteRectangle, compareRectangles);
+            grp->groups = initializeList(groupToString, deleteGroup, compareGroups);
+
+            
+            for (xmlAttr * attrib = mover->properties; attrib != NULL; attrib = attrib->next) {
+                Attribute * otherAtt = NULL;
+                otherAtt = malloc(sizeof(Attribute));
+                otherAtt->name = malloc(sizeof(char) * (strlen((char *)attrib->name) + 1));
+                strcpy(otherAtt->name, (char *)attrib->name);
+                otherAtt->value = malloc (sizeof(char) * (strlen((char *) attrib->children->content) + 1));
+                strcpy(otherAtt->value, (char*)attrib->children->content);
+                insertBack(grp->otherAttributes, otherAtt);
+            }
+            addPathsToGroup(grp, mover);
+            addCirclesToGroup(grp, mover);
+            addRectanglesToGroup(grp, mover);
+            AddGroupsToGroup(grp, mover);
+
+            insertBack(mygrp->groups, grp);
         }
     }
 }
@@ -459,7 +500,7 @@ char* rectangleToString(void* data){
     char * toAdd = NULL;
     int length = 300;
     string = malloc(sizeof(char) * length);
-    sprintf(string, "Rectangle:\n\tX: %lf\n\n\tY: %lf\n\n\tWidth: %lf\n\n\tHeight: %lf\n\n\tUnits: %s\n\n\tOther Attributes:\n", rect->x, rect->y, rect->width, rect->height, rect->units);
+    sprintf(string, "Rectangle:\n\tX: %.4lf\n\n\tY: %.4lf\n\n\tWidth: %.4lf\n\n\tHeight: %.4lf\n\n\tUnits: %s\n\n\tOther Attributes:\n", rect->x, rect->y, rect->width, rect->height, rect->units);
     toAdd = toString(rect->otherAttributes);
     string = realloc (string, sizeof(char) * (strlen(string) + strlen(toAdd) + 1));
     strcat(string, toAdd);
