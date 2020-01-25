@@ -11,8 +11,8 @@
 xmlNode * openXml(char* fileName, xmlDoc * doc);
 static void print_element_names(xmlNode * a_node);
 
-void addAttributes( void (addToList)(void * myStructure, Attribute * toAdd), void * structure, xmlNode * node);
-void addAttributesSVG(void * myStructure, Attribute *toAdd);
+void addAttributes(SVGimage * svg, xmlNode * node);
+
 void addCircles(SVGimage * svg, xmlNode * node);
 void addRectangles(SVGimage * svg, xmlNode * node);
 void AddGroupsSVG(SVGimage * svg, xmlNode * node);
@@ -55,7 +55,7 @@ SVGimage* createSVGimage(char* fileName){
     svg->groups = initializeList(groupToString, deleteGroup, compareGroups);
     svg->paths = initializeList(pathToString, deletePath, comparePaths);
  
-    addAttributes(addAttributesSVG, svg, root);
+    addAttributes(svg, root);
     addPaths(svg, root);
     addCircles(svg, root);
     addRectangles(svg, root);
@@ -189,7 +189,6 @@ char* groupToString( void* data){
     free(toAdd);
 
     strcat(string, "Group: <close>\n");
-    //printf("%s", string);
     return string;
 }
 
@@ -646,7 +645,7 @@ void addNameSpace(SVGimage * svg, xmlNode * root) {
 
 //finds the attributes of a specific xml node, adds them too attributes list in SVG header
 //function pointer is for what kind of structure the attributes are being added to, these functions are below
-void addAttributes( void (addToList)(void * myStructure, Attribute * toAdd), void * structure, xmlNode * node){ 
+void addAttributes(SVGimage * svg, xmlNode * node){ 
     xmlAttr * xmlattribute = NULL;
     Attribute * newAtt = NULL;   
     for (xmlattribute = node->properties; xmlattribute != NULL; xmlattribute = xmlattribute->next ){ //iterates through the nodes attributes
@@ -657,15 +656,9 @@ void addAttributes( void (addToList)(void * myStructure, Attribute * toAdd), voi
 
         newAtt->value = malloc(sizeof(char) * (strlen((char *)xmlattribute->children->content) + 1));
         strcpy(newAtt->value, (char *)xmlattribute->children->content); //copies value over
-        
-        addToList(structure, newAtt);
-    }
-}
 
-void addAttributesSVG(void * myStructure, Attribute * toAdd){
-    SVGimage * svg = myStructure;
-    insertBack(svg->otherAttributes, toAdd );
-    return;
+        insertBack(svg->otherAttributes, newAtt);
+    }
 }
 
 void addPaths(SVGimage * svg, xmlNode * node) {
