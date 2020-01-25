@@ -10,55 +10,61 @@
 
 
 void addAttributes(SVGimage * svg, xmlNode * node);
-
 void addCircles(Group * grp, SVGimage * svg, xmlNode * node);
 void addRectangles(Group * grp, SVGimage * svg, xmlNode * node); 
 void addGroups(Group * mygrp, SVGimage * svg, xmlNode * node);
+void addPaths(Group * grp, SVGimage * svg, xmlNode * node);
 
-void addRectanglesToGroup(Group * grp, xmlNode * node);
-void AddGroupsToGroup(Group * mygrp, xmlNode * node);
 
 float getValue(xmlChar * valStr);
 void getUnits(xmlChar * valStr, char * toCopy);
 
 void addNameSpace(SVGimage * svg, xmlNode * root);
-void addPaths(Group * grp, SVGimage * svg, xmlNode * node);
+
+
+/* 
+*This function creates an svg struct that describes filename, an svg image
+*CREDIT: The first ~10 lines of code in the function, which handle the xml file
+* were not written by me. They were taken from the file libXmlExample.c (author: Dodji Seketeli) 
+*which was given to us in the 'starter' package.
+* */
 
 SVGimage* createSVGimage(char* fileName){
     xmlDoc * doc = NULL;
     xmlNode* root = NULL;
     LIBXML_TEST_VERSION
 
-    doc = xmlReadFile(fileName, NULL, 0);
+    doc = xmlReadFile(fileName, NULL, 0); //opening file
         if (doc == NULL) {
             xmlFreeDoc(doc);
             xmlCleanupParser();
-            return NULL;
+            return NULL;          //exit if  file does not open properly
         }
     root = xmlDocGetRootElement(doc);
     
-    if (root == NULL){
+    if (root == NULL){     //exit if getrootelement fails
         xmlFreeDoc(doc);
         xmlCleanupParser();
         return NULL;
     }
-    SVGimage * svg = malloc(sizeof(SVGimage)); 
-    addNameSpace(svg, root);
+    SVGimage * svg = malloc(sizeof(SVGimage)); //malloc struct
+    addNameSpace(svg, root);                   // add namespace, title, desc
 
-    svg->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
+    svg->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);   //initialize all struct lists
     svg->circles = initializeList(circleToString, deleteCircle, compareCircles);
     svg->rectangles = initializeList(rectangleToString, deleteRectangle, compareRectangles);
     svg->groups = initializeList(groupToString, deleteGroup, compareGroups);
     svg->paths = initializeList(pathToString, deletePath, comparePaths);
  
-    addAttributes(svg, root);
+    addAttributes(svg, root);  //add all the elements to the svg struct
     addPaths(NULL, svg, root);
     addCircles(NULL, svg, root);
     addRectangles(NULL, svg, root);
     addGroups(NULL, svg, root);
-    xmlFreeDoc(doc);
+
+    xmlFreeDoc(doc);        //free residual xml mallocs
     xmlCleanupParser();
-    return svg;   
+    return svg;   //return the completed struct
 }
 
 /*
@@ -69,7 +75,7 @@ char* SVGimageToString(SVGimage* img){
         return NULL;
     }
     char * toAdd = NULL;
-    char * string = malloc (sizeof(char) * 1000);
+    char * string = malloc (sizeof(char) * 1000);           //allocating and formatting
     
     sprintf(string, "\nSVG Image\nNameSpace: %s\nTitle: %s\nDescription: %s\nAttributes:", img->namespace, img->title, img->description);
 
@@ -84,24 +90,22 @@ char* SVGimageToString(SVGimage* img){
     strcat(string, toAdd);
     free(toAdd);                    //frees OG path string
 
-    toAdd = toString(img->rectangles);
+    toAdd = toString(img->rectangles);  //add string describng rectangles
     string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
     strcat(string, toAdd);
     free(toAdd); 
 
-    toAdd = toString(img->circles);
+    toAdd = toString(img->circles);      //add circle string
     string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
     strcat(string, toAdd);
     free(toAdd);
 
-    toAdd = toString(img->groups);
+    toAdd = toString(img->groups);       // add group string
     string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
     strcat(string, toAdd);
     free(toAdd);
 
-
-    
-    return string;
+    return string;  //return groups
 }
 
 
@@ -110,117 +114,123 @@ void deleteSVGimage(SVGimage* img){
     if (img == NULL) {
         return;
     }
-    freeList(img->otherAttributes);
+    freeList(img->otherAttributes); //free all the lists
     freeList(img->paths);
     freeList(img->rectangles);
     freeList(img->circles);
     freeList(img->groups);
-    free(img);
+    free(img);      //free actual struct
 
     return;
 }
 
+/*ATTRIBUTE FUNCTIONS 
+*the below functions are used for attribute manipulation
+*they should never be directly called
+*/
+
+/* adds the attributes to the svg struct, node is the root of the xml tree */
+void addAttributes(SVGimage * svg, xmlNode * node){ 
+    xmlAttr * xmlattribute = NULL;
+    Attribute * newAtt = NULL;   
+    for (xmlattribute = node->properties; xmlattribute != NULL; xmlattribute = xmlattribute->next ){ //iterates through the nodes attributes
+        newAtt = NULL;
+        newAtt = malloc(sizeof(Attribute));  //creates struct
+        newAtt->name = malloc(sizeof(char) * (strlen((char *)xmlattribute->name) + 1));
+        strcpy(newAtt->name, (char *)xmlattribute->name); //copies name over
+
+        newAtt->value = malloc(sizeof(char) * (strlen((char *)xmlattribute->children->content) + 1));
+        strcpy(newAtt->value, (char *)xmlattribute->children->content); //copies value over
+
+        insertBack(svg->otherAttributes, newAtt);   //inserts into linked list
+    }
+}
 //helper function to delete attribute structs form linked list
 void deleteAttribute( void* data){
     Attribute * attrib = data;
-    free(attrib->name);
+    free(attrib->name);  //frees struct pointers
     free(attrib->value);
-    free(attrib);
+    free(attrib);       //frees struct
     return;
 }
-//returns a string describing attributes
+//returns a string describing the attribute
 char* attributeToString( void* data){
     Attribute * attrib = data;
-    int length = 0;
-    length =strlen("\tName: ") + strlen(attrib->name) + strlen("\n\tValue: ") + strlen(attrib->value) + strlen("\n") + 51;
-    char * str = malloc(sizeof(char) * (length));
+    int length =strlen("\tName: ") + strlen(attrib->name) + strlen("\n\tValue: ") + strlen(attrib->value) + strlen("\n") + 51; 
+    char * str = malloc(sizeof(char) * (length));                   //malloc and format
     sprintf(str, "\tName: %s\n\tValue: %s\n", attrib->name, attrib->value);
-    return str;
+    return str;   //return string, API handles freeing of string
 }
-
 //stub function
 int compareAttributes(const void *first, const void *second){
     return 0;
 }
 
-void deleteGroup(void* data){
-    Group * grp = data;
-    freeList(grp->otherAttributes);
-    freeList(grp->paths);
-    freeList(grp->circles);
-    freeList(grp->rectangles);
-    freeList(grp->groups);
-    free(grp);
-    return;
-}
-char* groupToString( void* data){
-    Group * grp = data;
-    char * string = malloc(sizeof(char) * 300);
-    char * toAdd = NULL;
-    sprintf(string, "\nGroup: <open>\n\n\tAttributes:\n");
+// adds the title, desc, and namespace to svg struct, not to be used on its own.
+void addNameSpace(SVGimage * svg, xmlNode * root) {
+    int noTitle = 0;
+    int noDesc  = 0;
+    strncpy(svg->namespace, (char *)root->ns->href, 255);
 
-    toAdd = toString(grp->otherAttributes);
-    string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
-    strcat(string, toAdd);
-    free(toAdd);
-
-    toAdd = toString(grp->paths);
-    string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
-    strcat(string, toAdd);
-    free(toAdd);
-
-    toAdd = toString(grp->circles);
-    string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
-    strcat(string, toAdd);
-    free(toAdd);
-
-    toAdd = toString(grp->rectangles);
-    string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
-    strcat(string, toAdd);
-    free(toAdd);
-
-    toAdd = toString(grp->groups);
-    string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
-    strcat(string, toAdd);
-    free(toAdd);
-
-    strcat(string, "Group: <close>\n");
-    return string;
+    for (xmlNode * mover = root->children; mover != NULL; mover = mover->next){
+        if (strcmp((char *)mover->name, "title") == 0){
+            if (mover->children->content != NULL){
+                strncpy(svg->title, (char *)mover->children->content, 255);  
+                noTitle = 1;
+            }
+        }
+       if (strcmp((char *)mover->name, "desc") == 0){
+            if (mover->children->content != NULL) {
+                strncpy(svg->description, (char *)mover->children->content, 255);
+                noDesc = 1;
+            }
+        }
+    }
+    if (noTitle == 0){
+        strncpy(svg->title, "", 2);
+    }
+    if (noDesc == 0) {
+        strncpy(svg->description, "", 2);
+    }
+    
 }
 
-//stub function for LLAPi
-int compareGroups(const void *first, const void *second){
-    return 0;
-}
-//looks for groups in node->children, and adds them to either mygrp or svg, whichever isnt NULL
+
+/* the below functions are for manipulating the group sturctures,  
+* They should be NEVER be called directly
+ */
+
+/* exmines nodes->children for groups, adds them to either mygrp or svg, whichever is not NULL
+* recursviely calls itself to add all gorups in the tree to the group or svg struct they should be contained in
+*/
 void addGroups(Group * mygrp, SVGimage * svg, xmlNode * node){
     Group * grp = NULL;
 
-    for (xmlNode *mover = node ->children; mover != NULL; mover = mover->next) {
+    for (xmlNode *mover = node ->children; mover != NULL; mover = mover->next) {  //searches through tree level for groups
         grp = NULL;
-        if (strcmp((char*)mover->name, "g") == 0){
-            grp = malloc(sizeof(Group));
+        if (strcmp((char*)mover->name, "g") == 0){          //finds a group
+            grp = malloc(sizeof(Group));                    //mallocs and initializes struct vars
             grp->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
             grp->paths = initializeList(pathToString, deletePath, comparePaths);
             grp->circles = initializeList(circleToString, deleteCircle, compareCircles);
             grp->rectangles = initializeList(rectangleToString, deleteRectangle, compareRectangles);
             grp->groups = initializeList(groupToString, deleteGroup, compareGroups);
             
-            for (xmlAttr * attrib = mover->properties; attrib != NULL; attrib = attrib->next) {
+            for (xmlAttr * attrib = mover->properties; attrib != NULL; attrib = attrib->next) {  //iterates through groups attributes
                 Attribute * otherAtt = NULL;
-                otherAtt = malloc(sizeof(Attribute));
-                otherAtt->name = malloc(sizeof(char) * (strlen((char *)attrib->name) + 1));
-                strcpy(otherAtt->name, (char *)attrib->name);
+                otherAtt = malloc(sizeof(Attribute));       //mallocs an attribute struct
+                otherAtt->name = malloc(sizeof(char) * (strlen((char *)attrib->name) + 1));  //mallocs and copies name
+                strcpy(otherAtt->name, (char *)attrib->name);   
                 otherAtt->value = malloc (sizeof(char) * (strlen((char *) attrib->children->content) + 1));
-                strcpy(otherAtt->value, (char*)attrib->children->content);
-                insertBack(grp->otherAttributes, otherAtt);
+                strcpy(otherAtt->value, (char*)attrib->children->content);   //mallocs and copies value
+                insertBack(grp->otherAttributes, otherAtt);        //inserts attribute into group attrib list
             }
-            addPaths(grp, NULL, mover);
-            addCircles(grp, NULL, mover);
-            addRectangles(grp, NULL, mover);
-            addGroups(grp, NULL, mover);
+            addPaths(grp, NULL, mover);      //adds any paths to group
+            addCircles(grp, NULL, mover);     //adds any circls to the group 
+            addRectangles(grp, NULL, mover);   //adds any rects to the group
+            addGroups(grp, NULL, mover);       //adds any groups to the group, recursive call! this handles groups within groups within groups...
             
-            if (svg == NULL) {
+            if (svg == NULL) {  //inserts the group into the necessary list, this is becuase the group can be added to svg list or group list depending on sitch
                 insertBack(mygrp->groups, grp);
             }
             else if ( mygrp == NULL) {
@@ -229,8 +239,64 @@ void addGroups(Group * mygrp, SVGimage * svg, xmlNode * node){
         }
     }
 }
+//function to free a group struct
+void deleteGroup(void* data){
+    Group * grp = data;
+    freeList(grp->otherAttributes);  //frees all the lists..
+    freeList(grp->paths);
+    freeList(grp->circles);
+    freeList(grp->rectangles);
+    freeList(grp->groups);
+    free(grp);       //frees the struct
+    return;
+}
+//function to return a string describing a group
+char* groupToString( void* data){
+    Group * grp = data;
+    char * string = malloc(sizeof(char) * 300);  //allocate memory
+    char * toAdd = NULL;
+    sprintf(string, "\nGroup: <open>\n\n\tAttributes:\n"); //format string
 
-// function adds rectangles to svg file, 
+    toAdd = toString(grp->otherAttributes);      //add string describing attributes
+    string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
+    strcat(string, toAdd);
+    free(toAdd);
+
+    toAdd = toString(grp->paths);           //add string describing paths
+    string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
+    strcat(string, toAdd);
+    free(toAdd);
+
+    toAdd = toString(grp->circles);         //add string describing circles
+    string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
+    strcat(string, toAdd);
+    free(toAdd);
+
+    toAdd = toString(grp->rectangles);      //add string describing rectangles
+    string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
+    strcat(string, toAdd);
+    free(toAdd);
+
+    toAdd = toString(grp->groups);         //add string describing groups
+    string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
+    strcat(string, toAdd);
+    free(toAdd);
+
+    strcat(string, "Group: <close>\n");    //this is bc there are groups within groups, helps w/ readability
+    return string;
+}
+//stub function for LLAPi
+int compareGroups(const void *first, const void *second){
+    return 0;
+}
+
+/* 
+*below are functions for manipulating rectangle structs,
+*They should NEVER be called directly
+*/
+
+
+// function adds rectangles to svg struct or a group struct, depending which one is not NULL, 
 void addRectangles(Group * grp, SVGimage * svg, xmlNode * node) {
     Rectangle * rect = NULL;
     
@@ -300,8 +366,8 @@ void addRectangles(Group * grp, SVGimage * svg, xmlNode * node) {
 //function to free a rectangle struct
 void deleteRectangle(void* data){
     Rectangle * rect = data;
-    freeList(rect->otherAttributes);
-    free(rect);
+    freeList(rect->otherAttributes);  //frees list
+    free(rect);     //frees struct, all other struct elements are statically allocated
     return;
 }
 //gets the numerical value out of a string
@@ -330,19 +396,25 @@ char* rectangleToString(void* data){
     char * string = NULL;
     char * toAdd = NULL;
     int length = 300;
-    string = malloc(sizeof(char) * length);
+    string = malloc(sizeof(char) * length);     //allocating and formatting
     sprintf(string, "Rectangle:\n\tX: %.4lf\n\n\tY: %.4lf\n\n\tWidth: %.4lf\n\n\tHeight: %.4lf\n\n\tUnits: %s\n\n\tOther Attributes:\n", rect->x, rect->y, rect->width, rect->height, rect->units);
-    toAdd = toString(rect->otherAttributes);
+    toAdd = toString(rect->otherAttributes);   
     string = realloc (string, sizeof(char) * (strlen(string) + strlen(toAdd) + 1));
-    strcat(string, toAdd);
+    strcat(string, toAdd);                    //adding string of attributes
     free(toAdd);
-    return string;
+    return string; //return string
 }
 //stub for linked list api
 int compareRectangles(const void *first, const void *second){
     return 0;
 }
-//adds circles to svg struct
+
+/* 
+*below are the functions for handling circle structs
+*They should NEVER be called directly... unless youre me and know how they work
+*/
+
+//adds circles to svg struct, or group, depending which arguement is not NULL
 void addCircles(Group * grp, SVGimage * svg, xmlNode * node) {
     Circle * circ = NULL;
     Attribute * otherAtt = NULL; 
@@ -408,9 +480,9 @@ char* circleToString(void* data){
     Circle * circ = data;
     char * string = NULL;
     char * toAdd = NULL;
-    string = malloc (sizeof(char *) * 300);
+    string = malloc (sizeof(char *) * 300);   //allocating and formatting
     sprintf(string, "Circle:\n\tCX: %.4lf\n\n\tCY: %.4lf\n\n\tR: %.4lf\n\n\tUnits: %s\n\n\tOther Attributes:\n", circ->cx, circ->cy, circ->r, circ->units);
-    toAdd = toString(circ->otherAttributes);
+    toAdd = toString(circ->otherAttributes);    //adding attribute string
     string = realloc(string, sizeof(char *)  * (strlen(toAdd) + strlen(string) + 1));
     strcat(string, toAdd);
     free(toAdd);
@@ -420,83 +492,14 @@ char* circleToString(void* data){
 int compareCircles(const void *first, const void *second){
     return 0;
 }
-//helper function for deleting Path structs from linked list
-void deletePath(void* data){
-    Path * pth = data;
-    
-    freeList(pth->otherAttributes);
-    free(pth->data);
-    free(pth);
-    return;
-}
-//returns a string describing the path and its attributes
-char* pathToString(void* data){
-    Path * pth = data;
-    char * toAdd = NULL;
-    char * string = NULL;
 
-    int length = strlen("Path:\n\tAttributes:\n\tData: ") + strlen(pth->data) + 50;
-    string = malloc(sizeof(char) * length);
-    sprintf(string, "Path:\n\tData: %s\n\n\tAttributes:\n", pth->data);
-    toAdd = toString(pth->otherAttributes);
-    string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
-    strcat(string, toAdd);
-    free(toAdd);
+/*
+*below are the functions for handlign paths
+* they should never be called directly
+*
+ */
 
-    return string;
-}
-//stub for linked list api
-int comparePaths(const void *first, const void *second){
-    return 0;
-}
-
-// adds the title, desc, and namespace to svg struct, not to be used on its own.
-void addNameSpace(SVGimage * svg, xmlNode * root) {
-    int noTitle = 0;
-    int noDesc  = 0;
-    strncpy(svg->namespace, (char *)root->ns->href, 255);
-
-    for (xmlNode * mover = root->children; mover != NULL; mover = mover->next){
-        if (strcmp((char *)mover->name, "title") == 0){
-            if (mover->children->content != NULL){
-                strncpy(svg->title, (char *)mover->children->content, 255);  
-                noTitle = 1;
-            }
-        }
-       if (strcmp((char *)mover->name, "desc") == 0){
-            if (mover->children->content != NULL) {
-                strncpy(svg->description, (char *)mover->children->content, 255);
-                noDesc = 1;
-            }
-        }
-    }
-    if (noTitle == 0){
-        strncpy(svg->title, "", 2);
-    }
-    if (noDesc == 0) {
-        strncpy(svg->description, "", 2);
-    }
-    
-}
-
-//finds the attributes of a specific xml node, adds them too attributes list in SVG header
-//function pointer is for what kind of structure the attributes are being added to, these functions are below
-void addAttributes(SVGimage * svg, xmlNode * node){ 
-    xmlAttr * xmlattribute = NULL;
-    Attribute * newAtt = NULL;   
-    for (xmlattribute = node->properties; xmlattribute != NULL; xmlattribute = xmlattribute->next ){ //iterates through the nodes attributes
-        newAtt = NULL;
-        newAtt = malloc(sizeof(Attribute));  //creates struct
-        newAtt->name = malloc(sizeof(char) * (strlen((char *)xmlattribute->name) + 1));
-        strcpy(newAtt->name, (char *)xmlattribute->name); //copies name over
-
-        newAtt->value = malloc(sizeof(char) * (strlen((char *)xmlattribute->children->content) + 1));
-        strcpy(newAtt->value, (char *)xmlattribute->children->content); //copies value over
-
-        insertBack(svg->otherAttributes, newAtt);
-    }
-}
-
+ //adds paths to svg or grp, whichever argument is not null
 void addPaths(Group * grp, SVGimage * svg, xmlNode * node) {
     Path * addPath;
     Attribute * otherAtt;
@@ -532,6 +535,35 @@ void addPaths(Group * grp, SVGimage * svg, xmlNode * node) {
         }
     }
 } 
+//helper function for deleting Path structs from linked list
+void deletePath(void* data){
+    Path * pth = data;
+    
+    freeList(pth->otherAttributes);
+    free(pth->data);
+    free(pth);
+    return;
+}
+//returns a string describing the path and its attributes
+char* pathToString(void* data){
+    Path * pth = data;
+    char * toAdd = NULL;
+    char * string = NULL;
+
+    int length = strlen("Path:\n\tAttributes:\n\tData: ") + strlen(pth->data) + 50;
+    string = malloc(sizeof(char) * length);
+    sprintf(string, "Path:\n\tData: %s\n\n\tAttributes:\n", pth->data);
+    toAdd = toString(pth->otherAttributes);
+    string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
+    strcat(string, toAdd);
+    free(toAdd);
+
+    return string;
+}
+//stub for linked list api
+int comparePaths(const void *first, const void *second){
+    return 0;
+}
 
 int main (int argc, char **argv) {
     SVGimage * svg = createSVGimage(argv[1]);
