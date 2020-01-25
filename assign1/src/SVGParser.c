@@ -13,7 +13,7 @@ void addAttributes(SVGimage * svg, xmlNode * node);
 
 void addCircles(Group * grp, SVGimage * svg, xmlNode * node);
 void addRectangles(Group * grp, SVGimage * svg, xmlNode * node); 
-void AddGroupsSVG(SVGimage * svg, xmlNode * node);
+void addGroups(Group * mygrp, SVGimage * svg, xmlNode * node);
 
 void addRectanglesToGroup(Group * grp, xmlNode * node);
 void AddGroupsToGroup(Group * mygrp, xmlNode * node);
@@ -55,7 +55,7 @@ SVGimage* createSVGimage(char* fileName){
     addPaths(NULL, svg, root);
     addCircles(NULL, svg, root);
     addRectangles(NULL, svg, root);
-    AddGroupsSVG(svg, root);
+    addGroups(NULL, svg, root);
     xmlFreeDoc(doc);
     xmlCleanupParser();
     return svg;   
@@ -192,8 +192,8 @@ char* groupToString( void* data){
 int compareGroups(const void *first, const void *second){
     return 0;
 }
-
-void AddGroupsSVG(SVGimage * svg, xmlNode * node){
+//looks for groups in node->children, and adds them to either mygrp or svg, whichever isnt NULL
+void addGroups(Group * mygrp, SVGimage * svg, xmlNode * node){
     Group * grp = NULL;
 
     for (xmlNode *mover = node ->children; mover != NULL; mover = mover->next) {
@@ -218,42 +218,14 @@ void AddGroupsSVG(SVGimage * svg, xmlNode * node){
             addPaths(grp, NULL, mover);
             addCircles(grp, NULL, mover);
             addRectangles(grp, NULL, mover);
-            AddGroupsToGroup(grp, mover);
-
-            insertBack(svg->groups, grp);
-        }
-    }
-}
-
-void AddGroupsToGroup(Group * mygrp, xmlNode * node){
-    Group * grp = NULL;
-
-    for (xmlNode *mover = node ->children; mover != NULL; mover = mover->next) {
-        grp = NULL;
-        if (strcmp((char*)mover->name, "g") == 0){
-            grp = malloc(sizeof(Group));
-            grp->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
-            grp->paths = initializeList(pathToString, deletePath, comparePaths);
-            grp->circles = initializeList(circleToString, deleteCircle, compareCircles);
-            grp->rectangles = initializeList(rectangleToString, deleteRectangle, compareRectangles);
-            grp->groups = initializeList(groupToString, deleteGroup, compareGroups);
-
+            addGroups(grp, NULL, mover);
             
-            for (xmlAttr * attrib = mover->properties; attrib != NULL; attrib = attrib->next) {
-                Attribute * otherAtt = NULL;
-                otherAtt = malloc(sizeof(Attribute));
-                otherAtt->name = malloc(sizeof(char) * (strlen((char *)attrib->name) + 1));
-                strcpy(otherAtt->name, (char *)attrib->name);
-                otherAtt->value = malloc (sizeof(char) * (strlen((char *) attrib->children->content) + 1));
-                strcpy(otherAtt->value, (char*)attrib->children->content);
-                insertBack(grp->otherAttributes, otherAtt);
+            if (svg == NULL) {
+                insertBack(mygrp->groups, grp);
             }
-            addPaths(grp, NULL, mover);
-            addCircles(grp, NULL, mover);
-            addRectangles(grp, NULL, mover);
-            AddGroupsToGroup(grp, mover);
-
-            insertBack(mygrp->groups, grp);
+            else if ( mygrp == NULL) {
+                insertBack(svg->groups, grp);
+            }
         }
     }
 }
@@ -560,8 +532,6 @@ void addPaths(Group * grp, SVGimage * svg, xmlNode * node) {
         }
     }
 } 
-
- 
 
 int main (int argc, char **argv) {
     SVGimage * svg = createSVGimage(argv[1]);
