@@ -692,6 +692,7 @@ void getGroupsGroup(Group * grpScan, List * grpAdd) {
 //function is used to free the Lists that are returned the GetXXXX functions
 //CREDIT: the two if statements  from the beginning of this function were taken from the linkedListAPI.c function "clearList"
 //this is a similar function but it does not free the data structures at each node 
+//i use it in my numXXXX functions
 void freeSoftList(List * toFree){
     if (toFree == NULL){  //validates list
         return;
@@ -735,13 +736,26 @@ int numRectsWithArea(SVGimage* img, float area){
     }
     
     int numRects = 0;
-    //int compare = 0;
-    //compare = (int)ceilf(area);
+    int compare = (int) ceil(area);
+    List * rects = getRects(img);
+    
 
-    printf("%f\n", ceil(area));
-    printf("%lf", area);
-    //printf("%f\n", ceilf(area));
+    ListIterator iter = createIterator(rects);
 
+    while (iter.current != NULL){
+        Rectangle * tempRect = nextElement(&iter);
+        int tempArea = ceil(tempRect->width * tempRect -> height);
+        printf("AREA: %d ***********************\n", tempArea);    
+        if (compare == tempArea) {
+            numRects++;
+        }
+    }
+
+    
+
+    freeSoftList(rects);
+    
+    printf("NUMRECTS: %d\n", numRects);
     return numRects;
 }
 
@@ -769,12 +783,12 @@ int numAttr(SVGimage* img);
 int main (int argc, char **argv) {
     SVGimage * svg = createSVGimage(argv[1]);
 
-  
+ /*  
     List * paths = getRects(svg);
     printf("\nLENGTH: %d\n", paths->length );
     char * string = toString(paths);
     printf("%s", string);
-    free(string);
+    free(string); */
  
 /* 
     string = SVGimageToString(svg);
@@ -782,11 +796,13 @@ int main (int argc, char **argv) {
         printf("%s\n", string);
         free(string);
     }
+
   printf("%f\n", ceilf(33.33));
-    numRectsWithArea(svg, 69.69);
- */   
+*/
+    numRectsWithArea(svg, 97.74);
+  
     deleteSVGimage(svg);
-    freeSoftList(paths);
+
 
 
     return 0;
