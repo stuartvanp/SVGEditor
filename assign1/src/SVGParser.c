@@ -1,11 +1,12 @@
 /*Stuart van Pinxteren student #0973785*/
-
+#include <math.h>
 #include <stdio.h>
 #include "SVGParser.h"
 #include "LinkedListAPI.h"
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <ctype.h>
+
 
 
 void addNameSpace(SVGimage * svg, xmlNode * root);
@@ -25,6 +26,7 @@ void getRectsGroup(List * grps, List * rects);
 void getCirclesGroup(List * grps, List * circles);
 void getPathsGroup(List * grps, List * pths);
 void getGroupsGroup(Group * grpScan, List * grpAdd);
+void freeSoftList(List * toFree);
 
 
 /* 
@@ -569,23 +571,6 @@ int comparePaths(const void *first, const void *second){
     return 0;
 }
 
-
-
-/*
- For the four "get..." functions below, make sure you return a list of opinters to the existing structs 
- - do not allocate new structs.  They all share the same format, and only differ in the contents of the lists 
- they return.
- 
- *@pre SVGimgage exists, is not null, and has not been freed
- *@post SVGimgage has not been modified in any way
- *@return a newly allocated List of components.  While the List struct itself is new, the components in it are just pointers
-  to the ones in the image.
-
- The list must me empty if the element is not found - do not return NULL
-
- *@param obj - a pointer to an SVG struct
- */
-
 // Function that returns a list of all rectangles in the image.  
 List* getRects(SVGimage* img){
     if (img == NULL)  {   //validates svg;
@@ -618,8 +603,6 @@ void getRectsGroup(List * grps, List * rects){
     return;
 
 }
- 
-
 // Function that returns a list of all circles in the image.  
 List* getCircles(SVGimage* img){
     if (img == NULL)  {   //validates svg;
@@ -695,43 +678,115 @@ List* getGroups(SVGimage* img){
     
     return grpAdd;
 }   
-
+//recursive functions that returns ALL groups contained within grpScan
 void getGroupsGroup(Group * grpScan, List * grpAdd) {
-    ListIterator iter = createIterator(grpScan->groups);
+    ListIterator iter = createIterator(grpScan->groups);  //iterator for grpscans group list
     while (iter.current != NULL) {
-        Group * tempGrp = nextElement(&iter);
-        insertBack(grpAdd, tempGrp);
-        getGroupsGroup(tempGrp, grpAdd);
+        Group * tempGrp = nextElement(&iter);  //gets current group and moves iterator forward
+        insertBack(grpAdd, tempGrp);             //inserts into list
+        getGroupsGroup(tempGrp, grpAdd);      //recursive call on the group just found
     }
     return;
 }
+
+//function is used to free the Lists that are returned the GetXXXX functions
+//CREDIT: the two if statements  from the beginning of this function were taken from the linkedListAPI.c function "clearList"
+//this is a similar function but it does not free the data structures at each node 
+void freeSoftList(List * toFree){
+    if (toFree == NULL){  //validates list
+        return;
+    }
+    if (toFree->head == NULL) { //empty list case
+        free(toFree);
+        return;
+    }
+    Node * dummy = toFree->head;  //dummy is 1 node behind current
+    Node * current = dummy->next;
+
+    while (current != NULL){ //walks through the list
+        free(dummy); 
+        dummy = current;
+        current = current->next;
+    }
+    free(dummy);  //free the last node
+    free(toFree); //free the list
+    return;
+}
+
+
+/* For the four "num..." functions below, you need to search the SVG image for components  that match the search 
+  criterion.  You may wish to write some sort of a generic searcher fucntion that accepts an image, a predicate function,
+  and a dummy search record as arguments.  We will discuss such search functions in class
+
+ NOTE: For consistency, use the ceil() function to round the floats up to the nearest integer once you have computed 
+ the number you need.  See A1 Module 2 for details.
+
+ *@pre SVGimgage exists, is not null, and has not been freed.  The search criterion is valid
+ *@post SVGimgage has not been modified in any way
+ *@return an int indicating how many objects matching the criterion are contained in the image
+ *@param obj - a pointer to an SVG struct
+ *@param 2nd - the second param depends on the function.  See details below
+ */   
+
+// Function that returns the number of all rectangles with the specified area
+int numRectsWithArea(SVGimage* img, float area){
+    if (img == NULL || area < 0) {
+        return 0;
+    }
+    
+    int numRects = 0;
+    //int compare = 0;
+    //compare = (int)ceilf(area);
+
+    printf("%f\n", ceil(area));
+    printf("%lf", area);
+    //printf("%f\n", ceilf(area));
+
+    return numRects;
+}
+
+
+
+// Function that returns the number of all circles with the specified area
+int numCirclesWithArea(SVGimage* img, float area);
+// Function that returns the number of all paths with the specified data - i.e. Path.data field
+int numPathsWithdata(SVGimage* img, char* data);
+// Function that returns the number of all groups with the specified length - see A1 Module 2 for details
+int numGroupsWithLen(SVGimage* img, int len);
+
+/*  Function that returns the total number of Attribute structs in the SVGimage - i.e. the number of Attributes
+    contained in all otherAttributes lists in the structs making up the SVGimage
+    *@pre SVGimgage  exists, is not null, and has not been freed.  
+    *@post SVGimage has not been modified in any way
+    *@return the total length of all attribute structs in the SVGimage
+    *@param obj - a pointer to an SVG struct
+*/
+int numAttr(SVGimage* img);
+
 
 
 
 int main (int argc, char **argv) {
     SVGimage * svg = createSVGimage(argv[1]);
-    if (svg == NULL) {
-        printf("invalid SVG");
-    }
 
   
-    List * grps = getGroups(svg);
-    printf("\nLENGTH: %d\n", grps->length );
-    char * string = toString(grps);
+    List * paths = getRects(svg);
+    printf("\nLENGTH: %d\n", paths->length );
+    char * string = toString(paths);
     printf("%s", string);
     free(string);
-
+ 
 /* 
     string = SVGimageToString(svg);
     if (string != NULL) {
         printf("%s\n", string);
         free(string);
     }
- */
-    
+  printf("%f\n", ceilf(33.33));
+    numRectsWithArea(svg, 69.69);
+ */   
     deleteSVGimage(svg);
-    free(grps);
- 
+    freeSoftList(paths);
 
 
     return 0;

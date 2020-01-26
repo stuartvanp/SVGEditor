@@ -20,10 +20,10 @@ clean:
 	rm $(BIN)*.o $(BIN)*.so
 
 buildTest: $(SRC)SVGParser.c $(INC)LinkedListAPI.h $(INC)SVGParser.h
-	gcc -Wall -std=c11 -g -I$(XML_PATH) -I$(INC) $(SRC)SVGParser.c -lxml2 -o $(SRC)Testing bin/LinkedListAPI.o
+	gcc -Wall -std=c11 -g -lm -I$(XML_PATH) -I$(INC) $(SRC)SVGParser.c -lxml2 -o $(SRC)Testing bin/LinkedListAPI.o
 
 runTest: $(SRC)Testing
-	./src/Testing rec_with_units.svg
+	./src/Testing Emoji_poo.svg
 
 valTest: $(SRC)Testing
-	valgrind -v ./src/Testing groups.svg
+	valgrind -v ./src/Testing Emoji_poo.svg
