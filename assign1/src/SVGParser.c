@@ -731,38 +731,55 @@ void freeSoftList(List * toFree){
 
 // Function that returns the number of all rectangles with the specified area
 int numRectsWithArea(SVGimage* img, float area){
-    if (img == NULL || area < 0) {
+    if (img == NULL || area < 0) {  //validates inputs
         return 0;
     }
     
     int numRects = 0;
-    int compare = (int) ceil(area);
-    List * rects = getRects(img);
+    int compare = (int) ceil(area); //rounds input
+    List * rects = getRects(img);   //gets a list of all rectangles in the svg
     
 
-    ListIterator iter = createIterator(rects);
+    ListIterator iter = createIterator(rects);  //create iterator
 
-    while (iter.current != NULL){
-        Rectangle * tempRect = nextElement(&iter);
-        int tempArea = ceil(tempRect->width * tempRect -> height);
-        printf("AREA: %d ***********************\n", tempArea);    
+    while (iter.current != NULL){     //walk through list
+        Rectangle * tempRect = nextElement(&iter);     //returns rectangle and pushes iterator forward
+        int tempArea = ceil(tempRect->width * tempRect -> height);    //calculate area
         if (compare == tempArea) {
-            numRects++;
+            numRects++;              //increment if equal
         }
     }
-
-    
-
-    freeSoftList(rects);
-    
-    printf("NUMRECTS: %d\n", numRects);
+    freeSoftList(rects);  //frees the soft list of rects
     return numRects;
 }
 
 
 
 // Function that returns the number of all circles with the specified area
-int numCirclesWithArea(SVGimage* img, float area);
+int numCirclesWithArea(SVGimage* img, float area){
+    if (img == NULL|| area < 0) {  //validates inputs
+        return 0;
+    }
+
+    int numCircles = 0;
+    int compare = (int)ceil(area);
+    List * circles = getCircles(img);   //gets a soft list of all the circles in svg
+
+    ListIterator iter = createIterator(circles);
+
+    while (iter.current != NULL) {              //iterates through the list
+        Circle * tempCirc = nextElement(&iter);    //returns current circle and pushes iterator
+        int tempArea = (int)ceil( 3.14159 * tempCirc->r * tempCirc->r);    //calculate area
+  
+        if (tempArea == compare) {     //compare and increment
+            numCircles++;
+        }
+    }
+    freeSoftList(circles);     //free the list and return numCircles
+    return numCircles;
+}
+
+
 // Function that returns the number of all paths with the specified data - i.e. Path.data field
 int numPathsWithdata(SVGimage* img, char* data);
 // Function that returns the number of all groups with the specified length - see A1 Module 2 for details
@@ -799,7 +816,7 @@ int main (int argc, char **argv) {
 
   printf("%f\n", ceilf(33.33));
 */
-    numRectsWithArea(svg, 97.74);
+    numCirclesWithArea(svg, 29);
   
     deleteSVGimage(svg);
 
