@@ -1,6 +1,7 @@
 /*Stuart van Pinxteren student #0973785*/
 #include <math.h>
 #include <stdio.h>
+#include <strings.h>
 #include "SVGParser.h"
 #include "LinkedListAPI.h"
 #include <libxml/parser.h>
@@ -27,6 +28,7 @@ void getCirclesGroup(List * grps, List * circles);
 void getPathsGroup(List * grps, List * pths);
 void getGroupsGroup(Group * grpScan, List * grpAdd);
 void freeSoftList(List * toFree);
+int groupLength(Group * grp);
 
 
 /* 
@@ -128,6 +130,8 @@ void deleteSVGimage(SVGimage* img){
     freeList(img->groups);
     free(img);      //free actual struct
 
+    img = NULL;
+
     return;
 }
 
@@ -180,13 +184,13 @@ void addNameSpace(SVGimage * svg, xmlNode * root) {
     strncpy(svg->namespace, (char *)root->ns->href, 255);
 
     for (xmlNode * mover = root->children; mover != NULL; mover = mover->next){
-        if (strcmp((char *)mover->name, "title") == 0){
+        if (strcasecmp((char *)mover->name, "title") == 0){
             if (mover->children->content != NULL){
                 strncpy(svg->title, (char *)mover->children->content, 255);  
                 noTitle = 1;
             }
         }
-       if (strcmp((char *)mover->name, "desc") == 0){
+       if (strcasecmp((char *)mover->name, "desc") == 0){
             if (mover->children->content != NULL) {
                 strncpy(svg->description, (char *)mover->children->content, 255);
                 noDesc = 1;
@@ -215,7 +219,7 @@ void addGroups(Group * mygrp, SVGimage * svg, xmlNode * node){
 
     for (xmlNode *mover = node ->children; mover != NULL; mover = mover->next) {  //searches through tree level for groups
         grp = NULL;
-        if (strcmp((char*)mover->name, "g") == 0){          //finds a group
+        if (strcasecmp((char*)mover->name, "g") == 0){          //finds a group
             grp = malloc(sizeof(Group));                    //mallocs and initializes struct vars
             grp->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
             grp->paths = initializeList(pathToString, deletePath, comparePaths);
@@ -309,7 +313,7 @@ void addRectangles(Group * grp, SVGimage * svg, xmlNode * node) {
     
     for (xmlNode * mover = node->children; mover != NULL; mover = mover->next ) { //iterates through all the pieces of svg
         rect = NULL;
-        if (strcmp((char*)mover->name, "rect") == 0) {  //finds rectangle and mallocs
+        if (strcasecmp((char*)mover->name, "rect") == 0) {  //finds rectangle and mallocs
             rect = malloc(sizeof(Rectangle));
             rect->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
             strcpy(rect->units, "");
@@ -317,14 +321,14 @@ void addRectangles(Group * grp, SVGimage * svg, xmlNode * node) {
             for (xmlAttr * attrib = mover->properties; attrib != NULL; attrib = attrib->next) {  //iterates through rectangle attributes
                 Attribute * otherAtt = NULL;
 
-                if (strcmp((char *)attrib->name, "y") == 0 ){  //finds y coordinate and saves it
+                if (strcasecmp((char *)attrib->name, "y") == 0 ){  //finds y coordinate and saves it
                     rect->y = getValue(attrib->children->content);
                     if (strlen(rect->units) == 0){
                         getUnits(attrib->children->content, rect->units);  //gets units, if ther are any, otherwise copies in a blank string
                     }                    
                 }
             
-                else if (strcmp((char *)attrib->name, "x") == 0 ){ //finds x coordinate and saves it
+                else if (strcasecmp((char *)attrib->name, "x") == 0 ){ //finds x coordinate and saves it
                     rect->x = getValue(attrib->children->content);
                     strcpy(rect->units, "");
                     if (strlen(rect->units) == 0){
@@ -332,7 +336,7 @@ void addRectangles(Group * grp, SVGimage * svg, xmlNode * node) {
                     }
                 }
             
-                else if (strcmp((char *)attrib->name, "width") == 0 ){ //finds width and saves it
+                else if (strcasecmp((char *)attrib->name, "width") == 0 ){ //finds width and saves it
                     rect->width = getValue(attrib->children->content);
                     if (rect->width < 0) {    //negative width is illegal
                         rect->width = rect->width * -1;
@@ -342,7 +346,7 @@ void addRectangles(Group * grp, SVGimage * svg, xmlNode * node) {
                     }
                 }
             
-                else if (strcmp((char *)attrib->name, "height") == 0 ){ //finds width and saves it
+                else if (strcasecmp((char *)attrib->name, "height") == 0 ){ //finds width and saves it
                     rect->height = getValue(attrib->children->content); //negative height is illegal
                     if (rect->height < 0) {
                         rect->height = rect->height * -1;
@@ -429,7 +433,7 @@ void addCircles(Group * grp, SVGimage * svg, xmlNode * node) {
     for (xmlNode * mover = node->children; mover != NULL; mover = mover->next) { //moves through the SVG elements
         circ = NULL;
 
-        if (strcmp((char *) mover->name, "circle") == 0) {  //finds a circle, mallocs
+        if (strcasecmp((char *) mover->name, "circle") == 0) {  //finds a circle, mallocs
             
             circ = malloc(sizeof(Circle));
             circ->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
@@ -438,19 +442,19 @@ void addCircles(Group * grp, SVGimage * svg, xmlNode * node) {
             for (xmlAttr * attrib = mover->properties; attrib != NULL; attrib = attrib->next ){  //moves throught the circles attributes
                 otherAtt = NULL;
             
-                if (strcmp((char *)attrib->name, "cx") == 0) {   //finds the cx value
+                if (strcasecmp((char *)attrib->name, "cx") == 0) {   //finds the cx value
                     circ->cx = getValue(attrib->children->content);
                     if (strlen(circ->units) == 0){
                         getUnits(attrib->children->content, circ->units);  //gets units
                     }
                 }
-                else if (strcmp((char*)attrib->name, "cy") == 0){  //finds the cy value
+                else if (strcasecmp((char*)attrib->name, "cy") == 0){  //finds the cy value
                     circ->cy = getValue(attrib->children->content);
                     if (strlen(circ->units) == 0){
                         getUnits(attrib->children->content, circ->units);  //gets units
                     }
                 }
-                else if (strcmp((char*)attrib->name, "r") == 0){   //finds the r value
+                else if (strcasecmp((char*)attrib->name, "r") == 0){   //finds the r value
                     circ->r = getValue(attrib->children->content);
                     if (strlen(circ->units) == 0){
                         getUnits(attrib->children->content, circ->units);  //gets units
@@ -514,13 +518,13 @@ void addPaths(Group * grp, SVGimage * svg, xmlNode * node) {
     for (xmlNode * mover = node->children; mover != NULL; mover = mover->next){ //iterates through the elements of xmltree 
         addPath = NULL;
         
-        if (strcmp((char*)mover->name, "path") == 0) { //if a path is found
+        if (strcasecmp((char*)mover->name, "path") == 0) { //if a path is found
             addPath = malloc(sizeof(Path));                  //creates struct
             addPath->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);         //initializes list of otherAtttributes
 
             for (xmlAttr * attrib = mover->properties; attrib != NULL; attrib = attrib->next ){ //iterates through the attributes
             
-                if (strcmp((char*)attrib->name, "d") == 0){                 //d is the only important attribute
+                if (strcasecmp((char*)attrib->name, "d") == 0){                 //d is the only important attribute
                     addPath->data = malloc(sizeof(char) * (strlen((char *)attrib->children->content) + 1));  //malllocs memory for data
                     strcpy(addPath->data, (char *) attrib->children->content);   //copies in data
                 }
@@ -570,6 +574,8 @@ char* pathToString(void* data){
 int comparePaths(const void *first, const void *second){
     return 0;
 }
+
+
 
 // Function that returns a list of all rectangles in the image.  
 List* getRects(SVGimage* img){
@@ -760,7 +766,6 @@ int numCirclesWithArea(SVGimage* img, float area){
     if (img == NULL|| area < 0) {  //validates inputs
         return 0;
     }
-
     int numCircles = 0;
     int compare = (int)ceil(area);
     List * circles = getCircles(img);   //gets a soft list of all the circles in svg
@@ -781,9 +786,53 @@ int numCirclesWithArea(SVGimage* img, float area){
 
 
 // Function that returns the number of all paths with the specified data - i.e. Path.data field
-int numPathsWithdata(SVGimage* img, char* data);
+int numPathsWithdata(SVGimage* img, char* data){
+    if (img == NULL ||data == NULL ||strlen(data) == 0){
+        return 0;
+    }
+    int numPaths = 0;
+    List * paths = getPaths(img);
+    ListIterator iter = createIterator(paths);
+    while (iter.current != NULL) {
+        Path * temPath = nextElement(&iter);
+        printf("path Data: %s\n", temPath->data);
+        if (strcmp(temPath->data, data) == 0) {
+            numPaths++;
+        }
+    }
+    freeSoftList(paths);
+    printf("numPaths%d\n", numPaths);
+    return numPaths;
+
+}
+
+
+
+
 // Function that returns the number of all groups with the specified length - see A1 Module 2 for details
-int numGroupsWithLen(SVGimage* img, int len);
+int numGroupsWithLen(SVGimage* img, int len){
+    if (img == NULL || len < 0){   //validate inputs
+        return 0;
+    }
+    int numGroups = 0;
+    int compare = len;
+    List * groups = getGroups(img);  //get a list of all groups in svg
+
+    ListIterator iter = createIterator(groups);  //iterator for group list
+
+    while(iter.current != NULL){
+        Group * tempGrp = nextElement(&iter);   //returns current and pushes iterator
+        if (compare == groupLength(tempGrp)){   //compares and increments
+            numGroups++;
+        }
+    }
+    freeSoftList(groups);  //frees list
+    return numGroups;
+}
+//returns 'length' of group
+int groupLength(Group * grp) {
+    return getLength(grp->circles) + getLength(grp->rectangles) + getLength(grp->paths) + getLength(grp->groups);
+}
 
 /*  Function that returns the total number of Attribute structs in the SVGimage - i.e. the number of Attributes
     contained in all otherAttributes lists in the structs making up the SVGimage
@@ -792,7 +841,53 @@ int numGroupsWithLen(SVGimage* img, int len);
     *@return the total length of all attribute structs in the SVGimage
     *@param obj - a pointer to an SVG struct
 */
-int numAttr(SVGimage* img);
+int numAttr(SVGimage* img){
+    if (img == NULL) { // validates inputs
+        return 0;
+    }
+    int numAtt = 0;
+
+    //gets list of all elements in the svg struct
+    List * rects = getRects(img);
+    List * circles = getCircles(img);
+    List * paths = getPaths(img);
+    List * groups = getGroups(img);
+    List * svgAtt = img->otherAttributes;
+
+
+    numAtt = numAtt + getLength(svgAtt); //adds svg attributes
+
+    //adds rectanle attributes
+    ListIterator iter = createIterator(rects);  //list iterators
+    while(iter.current != NULL) {
+        Rectangle * rect = nextElement(&iter);   //sets rect equal to current node and pushes iter forward
+        numAtt = numAtt + getLength(rect->otherAttributes);  //adds length
+    }
+    //adds rectangle attributes
+    iter = createIterator(circles);
+    while(iter.current != NULL) {
+        Circle * circ = nextElement(&iter);
+        numAtt = numAtt + getLength(circ->otherAttributes);
+    }
+    //adds path attributes
+    iter = createIterator(paths);
+    while(iter.current != NULL) {
+        Path * path = nextElement(&iter);
+        numAtt = numAtt + getLength(path->otherAttributes);
+    }
+    //adds group attributes
+    iter = createIterator(groups);
+    while(iter.current != NULL){
+        Group * group = nextElement(&iter);
+        numAtt = numAtt + getLength(group->otherAttributes);
+    }
+    //frees the lists that were created
+    freeSoftList(rects);
+    freeSoftList(circles);
+    freeSoftList(paths);
+    freeSoftList(groups);
+    return numAtt;
+}
 
 
 
@@ -807,18 +902,18 @@ int main (int argc, char **argv) {
     printf("%s", string);
     free(string); */
  
-/* 
-    string = SVGimageToString(svg);
+
+     char * string = SVGimageToString(svg);
     if (string != NULL) {
         printf("%s\n", string);
         free(string);
     }
+ 
 
-  printf("%f\n", ceilf(33.33));
-*/
-    numCirclesWithArea(svg, 29);
-  
+
     deleteSVGimage(svg);
+
+   
 
 
 
