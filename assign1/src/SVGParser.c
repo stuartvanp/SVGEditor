@@ -8,7 +8,7 @@
 #include <ctype.h>
 
 
-
+void addNameSpace(SVGimage * svg, xmlNode * root);
 void addAttributes(SVGimage * svg, xmlNode * node);
 void addCircles(Group * grp, SVGimage * svg, xmlNode * node);
 void addRectangles(Group * grp, SVGimage * svg, xmlNode * node); 
@@ -19,7 +19,12 @@ void addPaths(Group * grp, SVGimage * svg, xmlNode * node);
 float getValue(xmlChar * valStr);
 void getUnits(xmlChar * valStr, char * toCopy);
 
-void addNameSpace(SVGimage * svg, xmlNode * root);
+
+
+void getRectsGroup(List * grps, List * rects);
+void getCirclesGroup(List * grps, List * circles);
+void getPathsGroup(List * grps, List * pths);
+void getGroupsGroup(Group * grpScan, List * grpAdd);
 
 
 /* 
@@ -549,12 +554,11 @@ char* pathToString(void* data){
     Path * pth = data;
     char * toAdd = NULL;
     char * string = NULL;
-
-    int length = strlen("Path:\n\tAttributes:\n\tData: ") + strlen(pth->data) + 50;
+    int length = strlen("Path:\n\tAttributes:\n\tData: ") + strlen(pth->data) + 100;
     string = malloc(sizeof(char) * length);
     sprintf(string, "Path:\n\tData: %s\n\n\tAttributes:\n", pth->data);
     toAdd = toString(pth->otherAttributes);
-    string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 50));
+    string = realloc(string, sizeof(char) * (strlen(string) + strlen(toAdd) + 100));
     strcat(string, toAdd);
     free(toAdd);
 
@@ -565,19 +569,169 @@ int comparePaths(const void *first, const void *second){
     return 0;
 }
 
+
+
+/*
+ For the four "get..." functions below, make sure you return a list of opinters to the existing structs 
+ - do not allocate new structs.  They all share the same format, and only differ in the contents of the lists 
+ they return.
+ 
+ *@pre SVGimgage exists, is not null, and has not been freed
+ *@post SVGimgage has not been modified in any way
+ *@return a newly allocated List of components.  While the List struct itself is new, the components in it are just pointers
+  to the ones in the image.
+
+ The list must me empty if the element is not found - do not return NULL
+
+ *@param obj - a pointer to an SVG struct
+ */
+
+// Function that returns a list of all rectangles in the image.  
+List* getRects(SVGimage* img){
+    if (img == NULL)  {   //validates svg;
+        return NULL;
+    }
+    List * rects =  initializeList(rectangleToString, deleteRectangle, compareRectangles);  //allocates a list
+    ListIterator iter = createIterator(img->rectangles);  //creates iterator
+
+    while (iter.current != NULL){
+        insertBack(rects,nextElement(&iter));  //adds all rectangles from svg->rectangles
+    }
+    getRectsGroup(img->groups, rects);  //recursive function for groups
+
+
+    return rects;
+}
+ //recursive function that returns ALL rectangles in list grps
+void getRectsGroup(List * grps, List * rects){
+    ListIterator grpiter = createIterator(grps);  //iterator for the list of groups
+
+    while(grpiter.current != NULL) {   //iterates through every group
+        Group * tempGrp = nextElement(&grpiter);    //iterator for the group list of rectangles
+        ListIterator recter =  createIterator(tempGrp->rectangles);
+        while (recter.current != NULL) {  //iterates through the rectangles
+            insertBack(rects,nextElement(&recter)); //adds them
+            
+        }  
+        getRectsGroup(tempGrp->groups, rects);  //recursive call onto the groups List within the group being looked at
+    }
+    return;
+
+}
+ 
+
+// Function that returns a list of all circles in the image.  
+List* getCircles(SVGimage* img){
+    if (img == NULL)  {   //validates svg;
+        return NULL;
+    }
+    List * circs =  initializeList(circleToString, deleteCircle, compareCircles);  //allocates a list
+    ListIterator iter = createIterator(img->circles);  //creates iterator
+
+    while (iter.current != NULL){
+        insertBack(circs,nextElement(&iter));  //adds all circles from svg->circles
+    }
+    getCirclesGroup(img->groups, circs);  //recursive function that looks through groups
+    return circs;
+}
+//recursive function for adding circles within groups to circles list
+void getCirclesGroup(List * grps, List * circles) {
+   ListIterator grpiter = createIterator(grps);  //iterator for the list of groups
+
+    while(grpiter.current != NULL) {   //iterates through every group
+        Group * tempGrp = nextElement(&grpiter);    //this returns the current group then pushes the iterator forward
+        ListIterator circiter =  createIterator(tempGrp->circles);
+        while (circiter.current != NULL) {  //iterates through the circles
+            insertBack(circles,nextElement(&circiter)); //adds them
+            
+        }  
+        getCirclesGroup(tempGrp->groups, circles);  //recursive call onto the groups List within the group being looked at
+    }
+    return;
+}
+
+// Function that returns a list of all paths in the image.  
+List* getPaths(SVGimage* img){
+     if (img == NULL)  {   //validates svg;
+        return NULL;
+    }
+    List * pths =  initializeList(pathToString, deletePath, comparePaths);  //allocates a list
+    ListIterator iter = createIterator(img->paths);  //creates iterator
+
+    while (iter.current != NULL){
+        insertBack(pths,nextElement(&iter));  //adds all paths from svg->paths
+    }
+    getPathsGroup(img->groups, pths);  //recursive function that looks through groups
+    return pths;
+}
+//recursive function for returning adding paths within groups to pths list
+void getPathsGroup(List * grps, List * pths){
+    ListIterator grpiter = createIterator(grps);  //iterator for the list of groups
+
+    while(grpiter.current != NULL) {   //iterates through every group
+        Group * tempGrp = nextElement(&grpiter);    //this returns the current group then pushes the iterator forward
+        ListIterator pathiter =  createIterator(tempGrp->paths);
+        while (pathiter.current != NULL) {  //iterates through the paths
+            insertBack(pths,nextElement(&pathiter)); //adds them            
+        }  
+        getPathsGroup(tempGrp->groups, pths);  //recursive call onto the groups List within the group being looked at
+    }
+    return;
+} 
+
+// Function that returns a list of all groups in the image.  
+List* getGroups(SVGimage* img){
+    if (img == NULL) {   //validates img
+        return NULL;
+    }
+    List * grpAdd = initializeList(groupToString, deleteGroup, compareGroups); //creates list
+    ListIterator iter = createIterator(img->groups);    //iterator for svg groups list
+    
+    while (iter.current != NULL) {     //iterates through groups list
+        Group * tempGrp = nextElement(&iter);   //gets current group and pushes iterator forwards
+        insertBack(grpAdd, tempGrp);          //inserts 
+        getGroupsGroup(tempGrp, grpAdd);
+    }
+    
+    return grpAdd;
+}   
+
+void getGroupsGroup(Group * grpScan, List * grpAdd) {
+    ListIterator iter = createIterator(grpScan->groups);
+    while (iter.current != NULL) {
+        Group * tempGrp = nextElement(&iter);
+        insertBack(grpAdd, tempGrp);
+        getGroupsGroup(tempGrp, grpAdd);
+    }
+    return;
+}
+
+
+
 int main (int argc, char **argv) {
     SVGimage * svg = createSVGimage(argv[1]);
     if (svg == NULL) {
         printf("invalid SVG");
     }
 
-    char * string = SVGimageToString(svg);
+  
+    List * grps = getGroups(svg);
+    printf("\nLENGTH: %d\n", grps->length );
+    char * string = toString(grps);
+    printf("%s", string);
+    free(string);
+
+/* 
+    string = SVGimageToString(svg);
     if (string != NULL) {
         printf("%s\n", string);
         free(string);
     }
-
-   deleteSVGimage(svg);
+ */
+    
+    deleteSVGimage(svg);
+    free(grps);
+ 
 
 
     return 0;
