@@ -805,8 +805,6 @@ int numPathsWithdata(SVGimage* img, char* data){
 }
 
 
-
-
 // Function that returns the number of all groups with the specified length - see A1 Module 2 for details
 int numGroupsWithLen(SVGimage* img, int len){
     if (img == NULL || len < 0){   //validate inputs
