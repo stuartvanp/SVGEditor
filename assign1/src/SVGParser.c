@@ -795,13 +795,11 @@ int numPathsWithdata(SVGimage* img, char* data){
     ListIterator iter = createIterator(paths);
     while (iter.current != NULL) {
         Path * temPath = nextElement(&iter);
-        printf("path Data: %s\n", temPath->data);
         if (strcmp(temPath->data, data) == 0) {
             numPaths++;
         }
     }
     freeSoftList(paths);
-    printf("numPaths%d\n", numPaths);
     return numPaths;
 
 }
@@ -889,33 +887,3 @@ int numAttr(SVGimage* img){
     return numAtt;
 }
 
-
-
-
-int main (int argc, char **argv) {
-    SVGimage * svg = createSVGimage(argv[1]);
-
- /*  
-    List * paths = getRects(svg);
-    printf("\nLENGTH: %d\n", paths->length );
-    char * string = toString(paths);
-    printf("%s", string);
-    free(string); */
- 
-
-     char * string = SVGimageToString(svg);
-    if (string != NULL) {
-        printf("%s\n", string);
-        free(string);
-    }
- 
-
-
-    deleteSVGimage(svg);
-
-   
-
-
-
-    return 0;
-}
