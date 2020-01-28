@@ -315,6 +315,10 @@ void addRectangles(Group * grp, SVGimage * svg, xmlNode * node) {
         rect = NULL;
         if (strcasecmp((char*)mover->name, "rect") == 0) {  //finds rectangle and mallocs
             rect = malloc(sizeof(Rectangle));
+            rect->y = 0;
+            rect->x = 0;
+            rect->width = 0;
+            rect->height = 0;
             rect->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
             strcpy(rect->units, "");
             
@@ -436,6 +440,9 @@ void addCircles(Group * grp, SVGimage * svg, xmlNode * node) {
         if (strcasecmp((char *) mover->name, "circle") == 0) {  //finds a circle, mallocs
             
             circ = malloc(sizeof(Circle));
+            circ->cx = 0;
+            circ->cy = 0;
+            circ->r = 0;
             circ->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
             strcpy(circ->units, "");
             
