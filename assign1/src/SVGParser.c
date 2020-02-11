@@ -892,3 +892,16 @@ int numAttr(SVGimage* img){
     return numAtt;
 }
 
+int main (int argc, char * argv[]) {
+    printf("%s \n", argv[1]);
+
+    SVGimage * svg = createSVGimage(argv[1]);
+    char * str = SVGimageToString(svg);
+    printf("%s", str);
+    free(str);
+    deleteSVGimage(svg);
+
+    return 0;
+}
+
+
