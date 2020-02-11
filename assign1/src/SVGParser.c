@@ -891,7 +891,7 @@ int numAttr(SVGimage* img){
     freeSoftList(groups);
     return numAtt;
 }
-
+/* 
 int main (int argc, char * argv[]) {
     printf("%s \n", argv[1]);
 
@@ -905,3 +905,4 @@ int main (int argc, char * argv[]) {
 }
 
 
+ */
