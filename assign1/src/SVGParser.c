@@ -8,6 +8,10 @@
 #include <libxml/tree.h>
 #include <ctype.h>
 
+#include <libxml/xmlschemastypes.h>
+
+#define LIBXML_SCHEMAS_ENABLED
+
 
 
 void addNameSpace(SVGimage * svg, xmlNode * root);
@@ -30,6 +34,9 @@ void getGroupsGroup(Group * grpScan, List * grpAdd);
 void freeSoftList(List * toFree);
 int groupLength(Group * grp);
 
+
+
+int validDoc(xmlDoc * doc, char * schemaFile);
 
 /* 
 *This function creates an svg struct that describes filename, an svg image
@@ -728,19 +735,6 @@ void freeSoftList(List * toFree){
 }
 
 
-/* For the four "num..." functions below, you need to search the SVG image for components  that match the search 
-  criterion.  You may wish to write some sort of a generic searcher fucntion that accepts an image, a predicate function,
-  and a dummy search record as arguments.  We will discuss such search functions in class
-
- NOTE: For consistency, use the ceil() function to round the floats up to the nearest integer once you have computed 
- the number you need.  See A1 Module 2 for details.
-
- *@pre SVGimgage exists, is not null, and has not been freed.  The search criterion is valid
- *@post SVGimgage has not been modified in any way
- *@return an int indicating how many objects matching the criterion are contained in the image
- *@param obj - a pointer to an SVG struct
- *@param 2nd - the second param depends on the function.  See details below
- */   
 
 // Function that returns the number of all rectangles with the specified area
 int numRectsWithArea(SVGimage* img, float area){
@@ -765,7 +759,6 @@ int numRectsWithArea(SVGimage* img, float area){
     freeSoftList(rects);  //frees the soft list of rects
     return numRects;
 }
-
 
 
 // Function that returns the number of all circles with the specified area
@@ -837,13 +830,7 @@ int groupLength(Group * grp) {
     return getLength(grp->circles) + getLength(grp->rectangles) + getLength(grp->paths) + getLength(grp->groups);
 }
 
-/*  Function that returns the total number of Attribute structs in the SVGimage - i.e. the number of Attributes
-    contained in all otherAttributes lists in the structs making up the SVGimage
-    *@pre SVGimgage  exists, is not null, and has not been freed.  
-    *@post SVGimage has not been modified in any way
-    *@return the total length of all attribute structs in the SVGimage
-    *@param obj - a pointer to an SVG struct
-*/
+
 int numAttr(SVGimage* img){
     if (img == NULL) { // validates inputs
         return 0;
@@ -891,18 +878,102 @@ int numAttr(SVGimage* img){
     freeSoftList(groups);
     return numAtt;
 }
-/* 
-int main (int argc, char * argv[]) {
-    printf("%s \n", argv[1]);
 
-    SVGimage * svg = createSVGimage(argv[1]);
-    char * str = SVGimageToString(svg);
-    printf("%s", str);
-    free(str);
-    deleteSVGimage(svg);
+SVGimage* createValidSVGimage(char* fileName, char* schemaFile) {
 
-    return 0;
+    if (fileName == NULL || schemaFile == NULL) {
+        return NULL;
+    }
+    xmlDoc * doc = NULL;
+    xmlNode* root = NULL;
+    LIBXML_TEST_VERSION
+
+    doc = xmlReadFile(fileName, NULL, 0); //opening file
+    if (doc == NULL) {
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
+        return NULL;          //exit if  file does not open properly
+    }
+
+    
+
+
+    if (validDoc(doc, schemaFile) != 0) {
+        xmlFreeDoc(doc);        //free residual xml mallocs
+        xmlCleanupParser();
+        xmlMemoryDump();
+        return NULL;
+    }
+
+    root = xmlDocGetRootElement(doc);
+    
+    if (root == NULL){     //exit if getrootelement fails
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
+        return NULL;
+    }
+    SVGimage * svg = malloc(sizeof(SVGimage)); //malloc struct
+    addNameSpace(svg, root);                   // add namespace, title, desc
+
+    svg->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);   //initialize all struct lists
+    svg->circles = initializeList(circleToString, deleteCircle, compareCircles);
+    svg->rectangles = initializeList(rectangleToString, deleteRectangle, compareRectangles);
+    svg->groups = initializeList(groupToString, deleteGroup, compareGroups);
+    svg->paths = initializeList(pathToString, deletePath, comparePaths);
+ 
+    addAttributes(svg, root);  //add all the elements to the svg struct
+    addPaths(NULL, svg, root);
+    addCircles(NULL, svg, root);
+    addRectangles(NULL, svg, root);
+    addGroups(NULL, svg, root);
+
+    xmlFreeDoc(doc);        //free residual xml mallocs
+    xmlCleanupParser();
+    xmlMemoryDump(); ///////////////////////////////////////////////////////////////////////////////////////////////////////////dunno fam
+    return svg;   //return the completed struct
+
+    
+
+    return NULL;
 }
 
 
- */
+int validDoc(xmlDoc * doc, char * schemaFile) {
+    xmlSchemaPtr schema = NULL;
+    xmlSchemaParserCtxtPtr ctxt;
+    xmlLineNumbersDefault(1);
+
+    ctxt = xmlSchemaNewParserCtxt(schemaFile);
+
+    xmlSchemaSetParserErrors(ctxt, (xmlSchemaValidityErrorFunc) fprintf, (xmlSchemaValidityWarningFunc) fprintf, stderr);
+    schema = xmlSchemaParse(ctxt);
+    xmlSchemaFreeParserCtxt(ctxt);
+
+    xmlSchemaValidCtxtPtr ctext;
+    int ret = 1;
+
+    ctext = xmlSchemaNewValidCtxt(schema);
+    xmlSchemaSetValidErrors(ctext, (xmlSchemaValidityErrorFunc) fprintf, (xmlSchemaValidityWarningFunc) fprintf, stderr);
+    ret = xmlSchemaValidateDoc(ctext, doc);
+    xmlSchemaFreeValidCtxt(ctext);
+
+    xmlSchemaFree(schema);
+    return ret;
+}
+
+
+int main (int argc, char * argv[]) {
+    printf("%s \n", argv[1]);
+
+    SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
+/*     char * str = SVGimageToString(svg);
+    printf("%s", str);
+    free(str);  */
+    deleteSVGimage(svg);
+    createValidSVGimage("hello", NULL);
+    return 0;
+}
+ 
+
+
+ 
