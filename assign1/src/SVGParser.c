@@ -7,7 +7,7 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <ctype.h>
-
+#include <libxml/tree.h>
 #include <libxml/xmlschemastypes.h>
 
 #define LIBXML_SCHEMAS_ENABLED
@@ -37,6 +37,10 @@ int groupLength(Group * grp);
 
 
 int validDoc(xmlDoc * doc, char * schemaFile);
+xmlDoc * createXml(SVGimage * img);
+
+
+SVGimage * fakeCreateSVG(xmlDoc * doc, char * schemaFile);
 
 /* 
 *This function creates an svg struct that describes filename, an svg image
@@ -931,10 +935,6 @@ SVGimage* createValidSVGimage(char* fileName, char* schemaFile) {
     xmlCleanupParser();
     xmlMemoryDump(); ///////////////////////////////////////////////////////////////////////////////////////////////////////////dunno fam
     return svg;   //return the completed struct
-
-    
-
-    return NULL;
 }
 
 
@@ -962,15 +962,100 @@ int validDoc(xmlDoc * doc, char * schemaFile) {
 }
 
 
+
+xmlDoc * createXml(SVGimage * img) {
+    xmlDoc * doc = NULL;
+    xmlNode * root_node = NULL;
+    xmlNs * ns = NULL;
+
+    char buff[256];
+
+    doc = xmlNewDoc(BAD_CAST "01");
+    root_node = xmlNewNode(NULL, BAD_CAST "svg");
+    xmlDocSetRootElement(doc, root_node);
+
+    //xmlNewChild(root_node, NULL, BAD_CAST "svg", NULL);
+
+
+    ns = xmlNewNs(root_node, BAD_CAST img->namespace, NULL);
+    xmlSetNs(root_node, ns);
+
+
+    return doc;
+}
+
+void docFree(xmlDoc * doc) {
+    xmlFreeDoc(doc);
+    xmlCleanupParser();
+    xmlMemoryDump();
+
+}
+
+SVGimage * fakeCreateSVG(xmlDoc * doc, char * schemaFile) {
+    xmlNode* root = NULL;
+    LIBXML_TEST_VERSION
+
+
+    if (doc == NULL) {
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
+        return NULL;          //exit if  file does not open properly
+    }
+
+    
+
+
+    if (validDoc(doc, schemaFile) != 0) {
+        xmlFreeDoc(doc);        //free residual xml mallocs
+        xmlCleanupParser();
+        xmlMemoryDump();
+        return NULL;
+    }
+
+    root = xmlDocGetRootElement(doc);
+    
+    if (root == NULL){     //exit if getrootelement fails
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
+        return NULL;
+    }
+    SVGimage * svg = malloc(sizeof(SVGimage)); //malloc struct
+    addNameSpace(svg, root);                   // add namespace, title, desc
+
+    svg->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);   //initialize all struct lists
+    svg->circles = initializeList(circleToString, deleteCircle, compareCircles);
+    svg->rectangles = initializeList(rectangleToString, deleteRectangle, compareRectangles);
+    svg->groups = initializeList(groupToString, deleteGroup, compareGroups);
+    svg->paths = initializeList(pathToString, deletePath, comparePaths);
+ 
+    addAttributes(svg, root);  //add all the elements to the svg struct
+    addPaths(NULL, svg, root);
+    addCircles(NULL, svg, root);
+    addRectangles(NULL, svg, root);
+    addGroups(NULL, svg, root);
+
+    xmlFreeDoc(doc);        //free residual xml mallocs
+    xmlCleanupParser();
+    xmlMemoryDump(); 
+    return svg;   //return the completed struct
+}
+
+
 int main (int argc, char * argv[]) {
     printf("%s \n", argv[1]);
 
     SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
-/*     char * str = SVGimageToString(svg);
+    char * str = SVGimageToString(svg);
+    xmlDoc * doc = createXml(svg);
+    //printf("%s", str);
+    SVGimage *svg2 = fakeCreateSVG(doc, "svg.xsd");    
+    //docFree(doc);
+
+    free(str);  
+    str = SVGimageToString(svg2);
     printf("%s", str);
-    free(str);  */
+
     deleteSVGimage(svg);
-    createValidSVGimage("hello", NULL);
     return 0;
 }
  
