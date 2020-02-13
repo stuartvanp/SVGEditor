@@ -38,6 +38,9 @@ int groupLength(Group * grp);
 
 int validDoc(xmlDoc * doc, char * schemaFile);
 xmlDoc * createXml(SVGimage * img);
+void rectsXml(xmlNode * root, SVGimage * img);
+void circsXml(xmlNode * root, SVGimage * img);
+void pathsXml(xmlNode * root, SVGimage * img);
 
 
 SVGimage * fakeCreateSVG(xmlDoc * doc, char * schemaFile);
@@ -968,7 +971,6 @@ xmlDoc * createXml(SVGimage * img) {
     xmlNode * root_node = NULL;
     xmlNs * ns = NULL;
 
-    char buff[256];
 
     doc = xmlNewDoc(BAD_CAST "01");
     root_node = xmlNewNode(NULL, BAD_CAST "svg");
@@ -976,12 +978,104 @@ xmlDoc * createXml(SVGimage * img) {
 
     //xmlNewChild(root_node, NULL, BAD_CAST "svg", NULL);
 
-
+    
     ns = xmlNewNs(root_node, BAD_CAST img->namespace, NULL);
     xmlSetNs(root_node, ns);
+    if (strlen(img->title) != 0) {
+        xmlNewChild(root_node, NULL, BAD_CAST "title", BAD_CAST img->title);
+    }
+    if (strlen(img -> description) != 0) {
+        xmlNewChild(root_node, NULL, BAD_CAST "desc", BAD_CAST img->description);
+    }
+
+    ListIterator iter = createIterator(img->otherAttributes);
+
+    while (iter.current != NULL) {
+        Attribute * otherAtt = nextElement(&iter);
+        xmlNewProp(root_node, BAD_CAST otherAtt->name, BAD_CAST otherAtt->value);
+    }
+
+    rectsXml(root_node, img);
+    circsXml(root_node, img);
+    pathsXml(root_node, img);
 
 
     return doc;
+}
+
+void rectsXml(xmlNode * root, SVGimage * img) {
+    ListIterator iter = createIterator(img->rectangles);  //create iterator
+    char buffer[256];
+    while (iter.current != NULL){     //walk through list
+        Rectangle * tempRect = nextElement(&iter);     //returns rectangle and pushes iterator forward
+        xmlNode * rectNode = xmlNewChild(root, NULL, BAD_CAST "rect", NULL);
+        
+        sprintf(buffer, "%f%s", tempRect->x, tempRect->units);
+        xmlNewProp(rectNode, BAD_CAST "x", BAD_CAST buffer);
+
+        sprintf(buffer, "%f%s", tempRect->y, tempRect->units);
+        xmlNewProp(rectNode, BAD_CAST "y", BAD_CAST buffer);
+
+        sprintf(buffer, "%f%s", tempRect->width, tempRect->units);
+        xmlNewProp(rectNode, BAD_CAST "width", BAD_CAST buffer);
+
+        sprintf(buffer, "%f%s", tempRect->height, tempRect->units);
+        xmlNewProp(rectNode, BAD_CAST "height",BAD_CAST buffer);
+
+        ListIterator attIter = createIterator(tempRect->otherAttributes);
+
+        while (attIter.current != NULL) {
+            Attribute * otherAtt  = nextElement(&attIter);        
+            xmlNewProp(rectNode, BAD_CAST otherAtt->name, BAD_CAST otherAtt->value);
+        }
+    }
+    return;
+}
+
+void circsXml(xmlNode * root, SVGimage * img) {
+    ListIterator iter = createIterator(img->circles);
+    char buffer[256];
+
+    while(iter.current != NULL) {
+        Circle * circ = nextElement(&iter);
+        xmlNode * node = xmlNewChild(root, NULL, BAD_CAST "circle", NULL);
+
+        sprintf(buffer, "%f%s", circ->cx, circ->units);
+        xmlNewProp(node, BAD_CAST "cx", BAD_CAST buffer);
+
+        sprintf(buffer, "%f%s", circ->cy, circ->units);
+        xmlNewProp(node, BAD_CAST "cy", BAD_CAST buffer);
+    
+        sprintf(buffer, "%f%s", circ->r, circ->units);
+        xmlNewProp(node, BAD_CAST "r", BAD_CAST buffer);
+
+        ListIterator attIter = createIterator(circ->otherAttributes);
+
+        while (attIter.current != NULL) {
+            Attribute * otherAtt = nextElement(&attIter);
+            xmlNewProp(node, BAD_CAST otherAtt->name, BAD_CAST otherAtt->value);
+        }
+    }
+}
+
+
+void pathsXml(xmlNode * root, SVGimage * img){
+    ListIterator iter = createIterator(img->paths);
+
+    while (iter.current != NULL) {
+        Path * pth = nextElement(&iter);
+        xmlNode * node = xmlNewChild(root, NULL, BAD_CAST "path", NULL);
+
+        xmlNewProp(node, BAD_CAST "d", BAD_CAST pth->data);
+        ListIterator attIter = createIterator(pth->otherAttributes);
+
+        while (attIter.current != 0) {
+            Attribute * otherAtt = nextElement(&attIter);
+            xmlNewProp(node, BAD_CAST otherAtt->name, BAD_CAST otherAtt->value);
+        }
+
+    }
+
 }
 
 void docFree(xmlDoc * doc) {
@@ -1047,14 +1141,15 @@ int main (int argc, char * argv[]) {
     SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
     char * str = SVGimageToString(svg);
     xmlDoc * doc = createXml(svg);
-    //printf("%s", str);
+    printf("%s", str);
     SVGimage *svg2 = fakeCreateSVG(doc, "svg.xsd");    
     //docFree(doc);
-
+    printf("***************************************************************************************************************");
     free(str);  
     str = SVGimageToString(svg2);
     printf("%s", str);
-
+    deleteSVGimage(svg2);
+    free(str);
     deleteSVGimage(svg);
     return 0;
 }
