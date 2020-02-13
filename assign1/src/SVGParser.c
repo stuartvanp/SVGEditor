@@ -965,126 +965,124 @@ int validDoc(xmlDoc * doc, char * schemaFile) {
 }
 
 
-
+//function takes an svg struct and uses it to create an xml. does not free the svg
 xmlDoc * createXml(SVGimage * img) {
     xmlDoc * doc = NULL;
     xmlNode * root_node = NULL;
     xmlNs * ns = NULL;
 
 
-    doc = xmlNewDoc(BAD_CAST "01");
+    doc = xmlNewDoc(BAD_CAST "01");    //creates doc and root node
     root_node = xmlNewNode(NULL, BAD_CAST "svg");
     xmlDocSetRootElement(doc, root_node);
-
-    //xmlNewChild(root_node, NULL, BAD_CAST "svg", NULL);
-
     
-    ns = xmlNewNs(root_node, BAD_CAST img->namespace, NULL);
+    ns = xmlNewNs(root_node, BAD_CAST img->namespace, NULL);  //adds name space
     xmlSetNs(root_node, ns);
-    if (strlen(img->title) != 0) {
+
+    if (strlen(img->title) != 0) {  //adds a title, if it exists
         xmlNewChild(root_node, NULL, BAD_CAST "title", BAD_CAST img->title);
     }
-    if (strlen(img -> description) != 0) {
+    if (strlen(img -> description) != 0) {  //adds a description, if it exists
         xmlNewChild(root_node, NULL, BAD_CAST "desc", BAD_CAST img->description);
     }
-
+    //adds all of the otherAttributesfrom the svg struct
     ListIterator iter = createIterator(img->otherAttributes);
-
     while (iter.current != NULL) {
         Attribute * otherAtt = nextElement(&iter);
         xmlNewProp(root_node, BAD_CAST otherAtt->name, BAD_CAST otherAtt->value);
     }
 
-    rectsXml(root_node, img);
-    circsXml(root_node, img);
-    pathsXml(root_node, img);
-
+    rectsXml(root_node, img); //adds rectangles
+    circsXml(root_node, img); //adds circles
+    pathsXml(root_node,img);  //adds paths
 
     return doc;
 }
 
+//adds rects in img->rects to become children of root
 void rectsXml(xmlNode * root, SVGimage * img) {
     ListIterator iter = createIterator(img->rectangles);  //create iterator
     char buffer[256];
     while (iter.current != NULL){     //walk through list
         Rectangle * tempRect = nextElement(&iter);     //returns rectangle and pushes iterator forward
-        xmlNode * rectNode = xmlNewChild(root, NULL, BAD_CAST "rect", NULL);
+        xmlNode * rectNode = xmlNewChild(root, NULL, BAD_CAST "rect", NULL);   //cretaes child node to root for found rectangle
         
-        sprintf(buffer, "%f%s", tempRect->x, tempRect->units);
+        sprintf(buffer, "%f%s", tempRect->x, tempRect->units);  //adds x val and units
         xmlNewProp(rectNode, BAD_CAST "x", BAD_CAST buffer);
 
-        sprintf(buffer, "%f%s", tempRect->y, tempRect->units);
+        sprintf(buffer, "%f%s", tempRect->y, tempRect->units);   //adds y val
         xmlNewProp(rectNode, BAD_CAST "y", BAD_CAST buffer);
 
-        sprintf(buffer, "%f%s", tempRect->width, tempRect->units);
+        sprintf(buffer, "%f%s", tempRect->width, tempRect->units); //adds width
         xmlNewProp(rectNode, BAD_CAST "width", BAD_CAST buffer);
 
-        sprintf(buffer, "%f%s", tempRect->height, tempRect->units);
+        sprintf(buffer, "%f%s", tempRect->height, tempRect->units);  //adds height
         xmlNewProp(rectNode, BAD_CAST "height",BAD_CAST buffer);
 
-        ListIterator attIter = createIterator(tempRect->otherAttributes);
+        ListIterator attIter = createIterator(tempRect->otherAttributes);  //iterator for otherAtts
 
         while (attIter.current != NULL) {
             Attribute * otherAtt  = nextElement(&attIter);        
-            xmlNewProp(rectNode, BAD_CAST otherAtt->name, BAD_CAST otherAtt->value);
+            xmlNewProp(rectNode, BAD_CAST otherAtt->name, BAD_CAST otherAtt->value); //adds otherAtts of to rectangle nodes
         }
     }
     return;
 }
 
+//adds circs in img->circs to become children of root
 void circsXml(xmlNode * root, SVGimage * img) {
-    ListIterator iter = createIterator(img->circles);
+    ListIterator iter = createIterator(img->circles); // iterates through circles list
     char buffer[256];
 
-    while(iter.current != NULL) {
+    while(iter.current != NULL) {  //iterates thoguh circls list
         Circle * circ = nextElement(&iter);
-        xmlNode * node = xmlNewChild(root, NULL, BAD_CAST "circle", NULL);
+        xmlNode * node = xmlNewChild(root, NULL, BAD_CAST "circle", NULL); //adds circl child node
 
-        sprintf(buffer, "%f%s", circ->cx, circ->units);
+        sprintf(buffer, "%f%s", circ->cx, circ->units);  //adds cx
         xmlNewProp(node, BAD_CAST "cx", BAD_CAST buffer);
 
-        sprintf(buffer, "%f%s", circ->cy, circ->units);
+        sprintf(buffer, "%f%s", circ->cy, circ->units); //adds cy
         xmlNewProp(node, BAD_CAST "cy", BAD_CAST buffer);
     
-        sprintf(buffer, "%f%s", circ->r, circ->units);
+        sprintf(buffer, "%f%s", circ->r, circ->units);  //adds radius
         xmlNewProp(node, BAD_CAST "r", BAD_CAST buffer);
 
         ListIterator attIter = createIterator(circ->otherAttributes);
 
-        while (attIter.current != NULL) {
+        while (attIter.current != NULL) {  //iterates through other attributes of circles
             Attribute * otherAtt = nextElement(&attIter);
-            xmlNewProp(node, BAD_CAST otherAtt->name, BAD_CAST otherAtt->value);
+            xmlNewProp(node, BAD_CAST otherAtt->name, BAD_CAST otherAtt->value); //adds other attributes to circl node
         }
     }
 }
 
-
+//adds paths from img->paths to root
 void pathsXml(xmlNode * root, SVGimage * img){
     ListIterator iter = createIterator(img->paths);
 
-    while (iter.current != NULL) {
+    while (iter.current != NULL) {   //iterates through the paths list
         Path * pth = nextElement(&iter);
-        xmlNode * node = xmlNewChild(root, NULL, BAD_CAST "path", NULL);
+        xmlNode * node = xmlNewChild(root, NULL, BAD_CAST "path", NULL);  //adds a path node to
 
-        xmlNewProp(node, BAD_CAST "d", BAD_CAST pth->data);
+        xmlNewProp(node, BAD_CAST "d", BAD_CAST pth->data);  //adds data
         ListIterator attIter = createIterator(pth->otherAttributes);
 
-        while (attIter.current != 0) {
+        while (attIter.current != 0) {   //adds otherAttributes
             Attribute * otherAtt = nextElement(&attIter);
             xmlNewProp(node, BAD_CAST otherAtt->name, BAD_CAST otherAtt->value);
         }
-
     }
-
 }
 
+
+//frees an xmlDoc  
 void docFree(xmlDoc * doc) {
     xmlFreeDoc(doc);
     xmlCleanupParser();
     xmlMemoryDump();
-
 }
 
+//helper function to TEST my code, never used IRL
 SVGimage * fakeCreateSVG(xmlDoc * doc, char * schemaFile) {
     xmlNode* root = NULL;
     LIBXML_TEST_VERSION
