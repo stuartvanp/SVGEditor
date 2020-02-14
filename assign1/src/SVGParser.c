@@ -38,8 +38,9 @@ int groupLength(Group * grp);
 
 int validDoc(xmlDoc * doc, char * schemaFile);
 bool validSVG(SVGimage * img);
-
+bool validCircle(Circle * circ);
 bool validAttrib(Attribute * attrib);
+bool validPath(Path *pth);
 
 xmlDoc * createXml(SVGimage * img);
 void rectsXml(xmlNode * root, SVGimage * img, Group * grp);
@@ -177,8 +178,12 @@ void addAttributes(SVGimage * svg, xmlNode * node){
 //helper function to delete attribute structs form linked list
 void deleteAttribute( void* data){
     Attribute * attrib = data;
-    free(attrib->name);  //frees struct pointers
-    free(attrib->value);
+    if (attrib->name != NULL){
+        free(attrib->name);
+    }  //frees struct pointers
+    if (attrib->value!= NULL){
+        free(attrib->value);
+    }
     free(attrib);       //frees struct
     return;
 }
@@ -1188,23 +1193,63 @@ bool validSVG(SVGimage * img){
 
 //balidates a rectangle struct and its other attributes
 bool validRect(Rectangle * rect){
-    if (rect == NULL) {
+    if (rect == NULL) { 
         return false;
     }
     if (rect->width < 0 || rect->height < 0 || rect->otherAttributes == NULL) {
-        printf("RECTANGLEEE REEEEEEEEE");
-        return false;
+        return false;  //checks necessary paremeters
     }
     ListIterator iter = createIterator(rect->otherAttributes);
-    while (iter.current != NULL){
+    while (iter.current != NULL){    //iterates through attributes
         Attribute * attrib = nextElement(&iter);
-        if (validAttrib(attrib) == false){
+        if (validAttrib(attrib) == false){   //checks attribute parameters
             return false;
         }
     }
     return true;
 
 }
+//boolean validatin of a circle struct. 
+bool validCircle(Circle * circ) {
+    
+    if (circ == NULL) {
+        return false;
+    }
+    if (circ->r < 0 || circ->otherAttributes == NULL) {
+        return false;  //checks parameters
+    }
+    
+    ListIterator iter = createIterator(circ->otherAttributes);
+    while (iter.current != NULL){    //iterates through attributes
+        Attribute * attrib = nextElement(&iter);
+        if (validAttrib(attrib) == false){   //checks attribute parameters
+            return false;
+        }
+    }
+    return true;
+}
+
+//boolean validation of a path struct
+bool validPath(Path *pth){
+    if (pth == NULL){
+        return false;
+    }
+    if (pth->data == NULL || pth->otherAttributes == NULL) {
+        return false;  //validates parameters
+    }
+
+    ListIterator iter = createIterator(pth->otherAttributes);
+    while (iter.current != NULL){    //iterates through attributes
+        Attribute * attrib = nextElement(&iter);
+        if (validAttrib(attrib) == false){   //checks attribute parameters
+            return false;
+        }
+    }
+    return true;
+}
+
+
+
 
 //boolean validates an attribute struct
 bool validAttrib(Attribute * attrib) {
@@ -1295,14 +1340,42 @@ int main (int argc, char * argv[]) {
     //validSVG(svg);
     //deleteSVGimage(svg);
 
-    Attribute * attrib = malloc (sizeof(Attribute));
-    attrib->name = malloc (100);
-    attrib->value = malloc(100);
-    deleteAttribute(attrib);
+    Attribute * attrib = malloc(100);
+ 
+    //deleteAttribute(attrib);
 
-    printf("%p", attrib); 
 
-    printf("\n%d\n", validAttrib(attrib));
+/*     Rectangle * rect = malloc(sizeof(Rectangle));
+    rect->x = -1;
+    rect->y = -2;
+    rect->width = 1;
+    rect->height = 1;
+    strcpy(rect->units, ""); */
+    //rect->otherAttributes = NULL;
+    //initializeList(attributeToString, deleteAttribute, compareAttributes);
+    //insertBack(rect->otherAttributes, attrib);
+
+/* 
+    Circle * circ = malloc(sizeof(Circle));
+    circ->r = 1;
+    circ->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
+    insertBack(circ->otherAttributes, attrib);
+    printf("\n\n\n%d\n\n\n\n",validCircle(circ)); */
+
+    Path * pth = malloc(sizeof(Path));
+    pth->data = malloc(100);
+    pth->otherAttributes =initializeList(attributeToString, deleteAttribute, compareAttributes);
+    insertBack(pth->otherAttributes, attrib);
+
+
+    printf("\n\n\n%d\n\n\n\n",validPath(pth)); 
+
+    
+    //deleteRectangle(rect);
+    //deleteCircle(circ);
+    deletePath(pth);
+ 
+
 
 
 
