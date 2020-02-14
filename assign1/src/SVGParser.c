@@ -38,9 +38,11 @@ int groupLength(Group * grp);
 
 int validDoc(xmlDoc * doc, char * schemaFile);
 bool validSVG(SVGimage * img);
+bool validRect(Rectangle * rect);
 bool validCircle(Circle * circ);
 bool validAttrib(Attribute * attrib);
-bool validPath(Path *pth);
+bool validPath(Path * pth);
+bool validGroup(Group * grp);
 
 xmlDoc * createXml(SVGimage * img);
 void rectsXml(xmlNode * root, SVGimage * img, Group * grp);
@@ -620,14 +622,19 @@ List* getRects(SVGimage* img){
 }
  //recursive function that returns ALL rectangles in list grps
 void getRectsGroup(List * grps, List * rects){
+    if (grps == NULL) {
+        return;
+    }
     ListIterator grpiter = createIterator(grps);  //iterator for the list of groups
 
     while(grpiter.current != NULL) {   //iterates through every group
         Group * tempGrp = nextElement(&grpiter);    //iterator for the group list of rectangles
-        ListIterator recter =  createIterator(tempGrp->rectangles);
-        while (recter.current != NULL) {  //iterates through the rectangles
-            insertBack(rects,nextElement(&recter)); //adds them
+        if (tempGrp->rectangles != NULL){
+            ListIterator recter =  createIterator(tempGrp->rectangles);
+            while (recter.current != NULL) {  //iterates through the rectangles
+                insertBack(rects,nextElement(&recter)); //adds them
             
+            }
         }  
         getRectsGroup(tempGrp->groups, rects);  //recursive call onto the groups List within the group being looked at
     }
@@ -650,15 +657,20 @@ List* getCircles(SVGimage* img){
 }
 //recursive function for adding circles within groups to circles list
 void getCirclesGroup(List * grps, List * circles) {
-   ListIterator grpiter = createIterator(grps);  //iterator for the list of groups
+    if (grps == NULL) {
+        return;
+    }
+    ListIterator grpiter = createIterator(grps);  //iterator for the list of groups
 
     while(grpiter.current != NULL) {   //iterates through every group
         Group * tempGrp = nextElement(&grpiter);    //this returns the current group then pushes the iterator forward
-        ListIterator circiter =  createIterator(tempGrp->circles);
-        while (circiter.current != NULL) {  //iterates through the circles
-            insertBack(circles,nextElement(&circiter)); //adds them
-            
-        }  
+        if (tempGrp->circles != NULL) {
+            ListIterator circiter =  createIterator(tempGrp->circles);
+            while (circiter.current != NULL) {  //iterates through the circles
+                insertBack(circles,nextElement(&circiter)); //adds them
+            }
+        }
+
         getCirclesGroup(tempGrp->groups, circles);  //recursive call onto the groups List within the group being looked at
     }
     return;
@@ -680,14 +692,19 @@ List* getPaths(SVGimage* img){
 }
 //recursive function for returning adding paths within groups to pths list
 void getPathsGroup(List * grps, List * pths){
+    if (grps == NULL) {
+        return;
+    }
     ListIterator grpiter = createIterator(grps);  //iterator for the list of groups
 
     while(grpiter.current != NULL) {   //iterates through every group
         Group * tempGrp = nextElement(&grpiter);    //this returns the current group then pushes the iterator forward
-        ListIterator pathiter =  createIterator(tempGrp->paths);
-        while (pathiter.current != NULL) {  //iterates through the paths
-            insertBack(pths,nextElement(&pathiter)); //adds them            
-        }  
+        if (tempGrp->paths != NULL) {
+            ListIterator pathiter =  createIterator(tempGrp->paths);
+            while (pathiter.current != NULL) {  //iterates through the paths
+                insertBack(pths,nextElement(&pathiter)); //adds them            
+            }  
+        }
         getPathsGroup(tempGrp->groups, pths);  //recursive call onto the groups List within the group being looked at
     }
     return;
@@ -711,11 +728,13 @@ List* getGroups(SVGimage* img){
 }   
 //recursive functions that returns ALL groups contained within grpScan
 void getGroupsGroup(Group * grpScan, List * grpAdd) {
-    ListIterator iter = createIterator(grpScan->groups);  //iterator for grpscans group list
-    while (iter.current != NULL) {
-        Group * tempGrp = nextElement(&iter);  //gets current group and moves iterator forward
-        insertBack(grpAdd, tempGrp);             //inserts into list
-        getGroupsGroup(tempGrp, grpAdd);      //recursive call on the group just found
+    if (grpScan->groups != NULL){
+        ListIterator iter = createIterator(grpScan->groups);  //iterator for grpscans group list
+        while (iter.current != NULL) {
+            Group * tempGrp = nextElement(&iter);  //gets current group and moves iterator forward
+            insertBack(grpAdd, tempGrp);             //inserts into list
+            getGroupsGroup(tempGrp, grpAdd);      //recursive call on the group just found
+        }
     }
     return;
 }
@@ -1126,7 +1145,7 @@ void groupsXml(xmlNode * root, SVGimage * img, Group * grp) {
 //boolena function that validates an svg struct against header file parameters
 bool validSVG(SVGimage * img){
     ListIterator iter;
-    if (strlen(img->namespace) <= 0){
+    if (strlen(img->namespace) <= 0){  //checks validity of svg struct
         return false;
     }
     if (img->rectangles == NULL || img->circles  == NULL || img->paths == NULL) {
@@ -1136,25 +1155,31 @@ bool validSVG(SVGimage * img){
         return false;
     }
 
-    List * rects = getRects(img);
+    iter = createIterator(img->otherAttributes);
+    while (iter.current != NULL){    //iterates through attributes
+        Attribute * attrib = nextElement(&iter);
+        if (validAttrib(attrib) == false){   //checks attribute parameters
+            return false;
+        }
+    }
+
+    List * rects = getRects(img);  //checks validity of all rectangle structs
     iter = createIterator(rects);
     while (iter.current != NULL) {
         Rectangle * rect = nextElement(&iter);
-        if (rect->width < 0 || rect->height < 0 || rect->otherAttributes == NULL) {
+        if (validRect(rect) == false) {
             freeSoftList(rects);
-            printf("RECTANGLEEE REEEEEEEEE");
             return false;
         }
     }
     freeSoftList(rects);
 
-    List * circs = getCircles(img);
+    List * circs = getCircles(img);  //chekcs validity of all circle structs
     iter = createIterator(circs);
     while (iter.current != NULL) {
         Circle * circ = nextElement(&iter);
-        if (circ->r < 0 || circ->otherAttributes == NULL){
+        if (validCircle(circ) == false){
             freeSoftList(circs);
-            printf("CIRCLE REEEEEEEEEEEEE");
             return false;
         }
     }
@@ -1162,13 +1187,12 @@ bool validSVG(SVGimage * img){
 
 
 
-    List * pths = getPaths(img);
+    List * pths = getPaths(img);  //checks validity of all path structs
     iter = createIterator(pths);
     while (iter.current != NULL){
         Path * pth = nextElement(&iter);
-        if (pth->data == NULL || pth->otherAttributes == NULL){
+        if (validPath(pth) == false){
             freeSoftList(pths);
-            printf("PATHREEEEEEEEEEEEEEEEE");
             return false;
         }
     }
@@ -1176,19 +1200,18 @@ bool validSVG(SVGimage * img){
 
 
 
-    List * grps = getGroups(img);
+    List * grps = getGroups(img);   //checks validity of all group structs
     iter = createIterator(grps);
     while (iter.current != NULL) {
         Group * grp = nextElement(&iter);
-        if (grp->rectangles == NULL || grp->circles == NULL || grp->paths == NULL || grp->groups == NULL || grp->otherAttributes == NULL){
+        if (validGroup(grp) == false){
             freeSoftList(grps);
-            printf("group REEEEEEEEEEEEEEEEEEEEEE");
             return false;
         }
     }
     freeSoftList(grps);
 
-    return true;
+    return true;   //returns true if nothing fails
 }
 
 //balidates a rectangle struct and its other attributes
@@ -1248,7 +1271,26 @@ bool validPath(Path *pth){
     return true;
 }
 
-
+//boolean validation for a group based on header parameters
+bool validGroup(Group * grp){
+    if (grp == NULL){
+        return false;
+    }
+    if (grp->rectangles == NULL || grp->circles == NULL || grp->paths == NULL) {
+        return false;  //testing parameters
+    }
+    if (grp->groups == NULL || grp->otherAttributes == NULL){
+        return false;  //further testing
+    }
+    ListIterator iter = createIterator(grp->otherAttributes);
+    while (iter.current != NULL){    //iterates through attributes
+        Attribute * attrib = nextElement(&iter);
+        if (validAttrib(attrib) == false){   //checks attribute parameters
+            return false;
+        }
+    }
+    return true;
+}
 
 
 //boolean validates an attribute struct
@@ -1323,7 +1365,7 @@ SVGimage * fakeCreateSVG(xmlDoc * doc, char * schemaFile) {
 
 
 int main (int argc, char * argv[]) {
-    printf("%s \n", argv[1]);
+
 
     //SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
     //char * str = SVGimageToString(svg);
@@ -1341,44 +1383,55 @@ int main (int argc, char * argv[]) {
     //deleteSVGimage(svg);
 
     Attribute * attrib = malloc(100);
- 
-    //deleteAttribute(attrib);
+    attrib->name = malloc(100);
+    attrib->value = malloc(100);
 
 
-/*     Rectangle * rect = malloc(sizeof(Rectangle));
-    rect->x = -1;
-    rect->y = -2;
+    Rectangle * rect = malloc(sizeof(Rectangle));
+    rect->x = 1;
+    rect->y = 2;
     rect->width = 1;
     rect->height = 1;
-    strcpy(rect->units, ""); */
-    //rect->otherAttributes = NULL;
-    //initializeList(attributeToString, deleteAttribute, compareAttributes);
-    //insertBack(rect->otherAttributes, attrib);
+    strcpy(rect->units, ""); 
+    rect->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
 
-/* 
+ 
     Circle * circ = malloc(sizeof(Circle));
     circ->r = 1;
     circ->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
-    insertBack(circ->otherAttributes, attrib);
-    printf("\n\n\n%d\n\n\n\n",validCircle(circ)); */
-
-    Path * pth = malloc(sizeof(Path));
-    pth->data = malloc(100);
-    pth->otherAttributes =initializeList(attributeToString, deleteAttribute, compareAttributes);
-    insertBack(pth->otherAttributes, attrib);
 
 
-    printf("\n\n\n%d\n\n\n\n",validPath(pth)); 
+    Group * grp = malloc(sizeof(Group));
+    grp->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
+    grp->rectangles = initializeList(rectangleToString, deleteRectangle, compareAttributes);
+    grp->circles = initializeList(circleToString, deleteCircle, compareAttributes);
+    grp->paths =  initializeList(pathToString, deletePath, compareAttributes);
+    grp->groups = initializeList(groupToString, deleteGroup, compareAttributes);
+
+
+    Path * pth = malloc (sizeof(Path));
+    pth->data = malloc (sizeof(100));
+    pth->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
+
 
     
-    //deleteRectangle(rect);
-    //deleteCircle(circ);
-    deletePath(pth);
- 
+    SVGimage * svg = malloc(sizeof(SVGimage));
+    strcpy (svg->namespace, "fart");
+    svg->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
+    svg->rectangles = initializeList(rectangleToString, deleteRectangle, compareAttributes);
+    svg->circles = initializeList(circleToString, deleteCircle, compareAttributes);
+    svg->paths = initializeList(pathToString, deletePath, compareAttributes);
+    svg->groups = initializeList(groupToString, deleteGroup, compareAttributes);
+    insertBack(svg->otherAttributes, attrib);
+    insertBack(svg->rectangles, rect);
+    insertBack(svg->paths, pth);
+    insertBack(svg->circles, circ);
+    insertBack(svg->groups, grp);
 
+    printf("\n\n\n%d\n\n\n\n",validSVG(svg)); 
 
-
-
+    
+    deleteSVGimage(svg);
 
     return 0;
 }
