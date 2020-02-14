@@ -54,6 +54,7 @@ void circleAtt(List * circles, int index, Attribute * attrib);
 void svgAtt(SVGimage * img, Attribute * attrib);
 void rectAtt(List * rects, int index, Attribute * attrib);
 void pathAtt(List * paths, int index, Attribute * attrib);
+void groupAtt(List * groups, int index, Attribute * attrib);
 /* 
 *This function creates an svg struct that describes filename, an svg image
 *CREDIT: The first ~10 lines of code in the function, which handle the xml file
@@ -1536,6 +1537,30 @@ void pathAtt(List * paths, int index, Attribute * attrib) {
     insertBack(path->otherAttributes, attrib);    
 
 
+}
+
+void groupAtt(List * groups, int index, Attribute * attrib) {
+    ListIterator iter = createIterator(groups);
+    int item = -1;
+    Group * grp;
+    do {
+        item++;
+        grp = nextElement(&iter);
+
+    } while (item != index);
+
+    iter = createIterator(grp->otherAttributes);
+    while (iter.current != NULL) {
+        Attribute * otherAtt = nextElement(&iter);
+        if (strcmp(otherAtt->name, attrib->name) == 0){
+            otherAtt->value = realloc(otherAtt->value, sizeof(char) * strlen(attrib->value) + 10);
+            strcpy(otherAtt->value, attrib->value);
+            deleteAttribute(attrib);
+            return;
+        }
+    }
+    insertBack(grp->otherAttributes, attrib);
+    return;
 }
 
 
