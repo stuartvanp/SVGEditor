@@ -37,11 +37,15 @@ int groupLength(Group * grp);
 
 
 int validDoc(xmlDoc * doc, char * schemaFile);
-xmlDoc * createXml(SVGimage * img);
-void rectsXml(xmlNode * root, SVGimage * img);
-void circsXml(xmlNode * root, SVGimage * img);
-void pathsXml(xmlNode * root, SVGimage * img);
+bool validSVG(SVGimage * img);
 
+bool validAttrib(Attribute * attrib);
+
+xmlDoc * createXml(SVGimage * img);
+void rectsXml(xmlNode * root, SVGimage * img, Group * grp);
+void circsXml(xmlNode * root, SVGimage * img, Group * grp);
+void pathsXml(xmlNode * root, SVGimage * img, Group * grp);
+void groupsXml(xmlNode * root, SVGimage * img, Group * grp);
 
 SVGimage * fakeCreateSVG(xmlDoc * doc, char * schemaFile);
 
@@ -356,9 +360,6 @@ void addRectangles(Group * grp, SVGimage * svg, xmlNode * node) {
             
                 else if (strcasecmp((char *)attrib->name, "width") == 0 ){ //finds width and saves it
                     rect->width = getValue(attrib->children->content);
-                    if (rect->width < 0) {    //negative width is illegal
-                        rect->width = rect->width * -1;
-                    }
                     if (strlen(rect->units) == 0){
                         getUnits(attrib->children->content, rect->units);  //gets units, if ther are any, otherwise copies in a blank string
                     }
@@ -366,9 +367,7 @@ void addRectangles(Group * grp, SVGimage * svg, xmlNode * node) {
             
                 else if (strcasecmp((char *)attrib->name, "height") == 0 ){ //finds width and saves it
                     rect->height = getValue(attrib->children->content); //negative height is illegal
-                    if (rect->height < 0) {
-                        rect->height = rect->height * -1;
-                    }
+
                     if (strlen(rect->units) == 0){
                         getUnits(attrib->children->content, rect->units);  //gets units, if ther are any, otherwise copies in a blank string
                     }
@@ -992,16 +991,23 @@ xmlDoc * createXml(SVGimage * img) {
         xmlNewProp(root_node, BAD_CAST otherAtt->name, BAD_CAST otherAtt->value);
     }
 
-    rectsXml(root_node, img); //adds rectangles
-    circsXml(root_node, img); //adds circles
-    pathsXml(root_node,img);  //adds paths
+    rectsXml(root_node, img, NULL); //adds rectangles
+    circsXml(root_node, img, NULL); //adds circles
+    pathsXml(root_node, img, NULL);  //adds paths
+    groupsXml(root_node, img, NULL);
 
     return doc;
 }
 
 //adds rects in img->rects to become children of root
-void rectsXml(xmlNode * root, SVGimage * img) {
-    ListIterator iter = createIterator(img->rectangles);  //create iterator
+void rectsXml(xmlNode * root, SVGimage * img, Group * grp) {
+    ListIterator iter;
+    if(img != NULL) { 
+        iter = createIterator(img->rectangles);  //create iterator
+    }
+    else {
+        iter = createIterator(grp->rectangles); 
+    }
     char buffer[256];
     while (iter.current != NULL){     //walk through list
         Rectangle * tempRect = nextElement(&iter);     //returns rectangle and pushes iterator forward
@@ -1030,8 +1036,15 @@ void rectsXml(xmlNode * root, SVGimage * img) {
 }
 
 //adds circs in img->circs to become children of root
-void circsXml(xmlNode * root, SVGimage * img) {
-    ListIterator iter = createIterator(img->circles); // iterates through circles list
+void circsXml(xmlNode * root, SVGimage * img, Group * grp) {
+    ListIterator iter; 
+    if (img != NULL) {
+        iter= createIterator(img->circles); // iterates through circles list
+    }
+    else{
+        iter = createIterator(grp->circles);
+    }
+    
     char buffer[256];
 
     while(iter.current != NULL) {  //iterates thoguh circls list
@@ -1057,9 +1070,14 @@ void circsXml(xmlNode * root, SVGimage * img) {
 }
 
 //adds paths from img->paths to root
-void pathsXml(xmlNode * root, SVGimage * img){
-    ListIterator iter = createIterator(img->paths);
-
+void pathsXml(xmlNode * root, SVGimage * img, Group * grp){
+    ListIterator iter;
+    if (img != NULL) {
+        iter = createIterator(img->paths);
+    }
+    else {
+        iter = createIterator(grp->paths);
+    }
     while (iter.current != NULL) {   //iterates through the paths list
         Path * pth = nextElement(&iter);
         xmlNode * node = xmlNewChild(root, NULL, BAD_CAST "path", NULL);  //adds a path node to
@@ -1073,6 +1091,132 @@ void pathsXml(xmlNode * root, SVGimage * img){
         }
     }
 }
+
+
+//adds groups form img or grp to be children of node root
+void groupsXml(xmlNode * root, SVGimage * img, Group * grp) {
+    ListIterator iter;
+    if (img != NULL){  //checks if from img or grp
+        iter = createIterator(img->groups);
+    }
+    else {
+        iter = createIterator(grp->groups);
+    }
+    while (iter.current != NULL) {  //iterates through group
+        Group * tmpgrp = nextElement(&iter);
+        xmlNode * node = xmlNewChild(root, NULL, BAD_CAST "g", NULL); //makes child node
+
+        ListIterator attIter = createIterator(tmpgrp->otherAttributes); //iterator for other attributes
+        while (attIter.current != NULL) {
+            Attribute * otherAtt = nextElement(&attIter);   //adds attributes
+            xmlNewProp(node, BAD_CAST otherAtt->name, BAD_CAST otherAtt->value);
+        }
+        rectsXml(node, NULL, tmpgrp);  //adds rects, circlces, paths
+        circsXml(node, NULL, tmpgrp);
+        pathsXml(node, NULL, tmpgrp);
+        groupsXml(node, NULL, tmpgrp);  //recursive call to add groups within groups 
+    }
+}
+
+//boolena function that validates an svg struct against header file parameters
+bool validSVG(SVGimage * img){
+    ListIterator iter;
+    if (strlen(img->namespace) <= 0){
+        return false;
+    }
+    if (img->rectangles == NULL || img->circles  == NULL || img->paths == NULL) {
+        return false;
+    }
+    if  (img->groups == NULL || img->otherAttributes == NULL){
+        return false;
+    }
+
+    List * rects = getRects(img);
+    iter = createIterator(rects);
+    while (iter.current != NULL) {
+        Rectangle * rect = nextElement(&iter);
+        if (rect->width < 0 || rect->height < 0 || rect->otherAttributes == NULL) {
+            freeSoftList(rects);
+            printf("RECTANGLEEE REEEEEEEEE");
+            return false;
+        }
+    }
+    freeSoftList(rects);
+
+    List * circs = getCircles(img);
+    iter = createIterator(circs);
+    while (iter.current != NULL) {
+        Circle * circ = nextElement(&iter);
+        if (circ->r < 0 || circ->otherAttributes == NULL){
+            freeSoftList(circs);
+            printf("CIRCLE REEEEEEEEEEEEE");
+            return false;
+        }
+    }
+    freeSoftList(circs);
+
+
+
+    List * pths = getPaths(img);
+    iter = createIterator(pths);
+    while (iter.current != NULL){
+        Path * pth = nextElement(&iter);
+        if (pth->data == NULL || pth->otherAttributes == NULL){
+            freeSoftList(pths);
+            printf("PATHREEEEEEEEEEEEEEEEE");
+            return false;
+        }
+    }
+    freeSoftList(pths);
+
+
+
+    List * grps = getGroups(img);
+    iter = createIterator(grps);
+    while (iter.current != NULL) {
+        Group * grp = nextElement(&iter);
+        if (grp->rectangles == NULL || grp->circles == NULL || grp->paths == NULL || grp->groups == NULL || grp->otherAttributes == NULL){
+            freeSoftList(grps);
+            printf("group REEEEEEEEEEEEEEEEEEEEEE");
+            return false;
+        }
+    }
+    freeSoftList(grps);
+
+    return true;
+}
+
+//balidates a rectangle struct and its other attributes
+bool validRect(Rectangle * rect){
+    if (rect == NULL) {
+        return false;
+    }
+    if (rect->width < 0 || rect->height < 0 || rect->otherAttributes == NULL) {
+        printf("RECTANGLEEE REEEEEEEEE");
+        return false;
+    }
+    ListIterator iter = createIterator(rect->otherAttributes);
+    while (iter.current != NULL){
+        Attribute * attrib = nextElement(&iter);
+        if (validAttrib(attrib) == false){
+            return false;
+        }
+    }
+    return true;
+
+}
+
+//boolean validates an attribute struct
+bool validAttrib(Attribute * attrib) {
+    if (attrib == NULL) { //returns false if pointer is null or struct pointers are null
+        return false;
+    }
+    if (attrib->name == NULL || attrib->value == NULL){
+        return false;
+    }
+    return true;
+}
+
 
 
 //frees an xmlDoc  
@@ -1136,19 +1280,33 @@ SVGimage * fakeCreateSVG(xmlDoc * doc, char * schemaFile) {
 int main (int argc, char * argv[]) {
     printf("%s \n", argv[1]);
 
-    SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
-    char * str = SVGimageToString(svg);
-    xmlDoc * doc = createXml(svg);
-    printf("%s", str);
-    SVGimage *svg2 = fakeCreateSVG(doc, "svg.xsd");    
+    //SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
+    //char * str = SVGimageToString(svg);
+    //xmlDoc * doc = createXml(svg);
+    //printf("%s", str);
+    //SVGimage *svg2 = fakeCreateSVG(doc, "svg.xsd");    
     //docFree(doc);
-    printf("***************************************************************************************************************");
-    free(str);  
-    str = SVGimageToString(svg2);
-    printf("%s", str);
-    deleteSVGimage(svg2);
-    free(str);
-    deleteSVGimage(svg);
+    //printf("***************************************************************************************************************");
+    //free(str);  
+    //str = SVGimageToString(svg2);
+    //printf("%s", str);
+    //deleteSVGimage(svg2);
+    //free(str);
+    //validSVG(svg);
+    //deleteSVGimage(svg);
+
+    Attribute * attrib = malloc (sizeof(Attribute));
+    attrib->name = malloc (100);
+    attrib->value = malloc(100);
+    deleteAttribute(attrib);
+
+    printf("%p", attrib); 
+
+    printf("\n%d\n", validAttrib(attrib));
+
+
+
+
     return 0;
 }
  

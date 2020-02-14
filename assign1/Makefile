@@ -19,11 +19,11 @@ $(BIN)LinkedListAPI.o: $(SRC)LinkedListAPI.c $(INC)LinkedListAPI.h
 clean:
 	rm $(BIN)*.o $(BIN)*.so
 
-buildTest: $(SRC)SVGParser.c $(INC)LinkedListAPI.h $(INC)SVGParser.h
+build: $(SRC)SVGParser.c $(INC)LinkedListAPI.h $(INC)SVGParser.h
 	gcc -Wall -std=c11 -g -lm -I$(XML_PATH) -I$(INC) $(SRC)SVGParser.c -lxml2 -o $(SRC)Testing bin/LinkedListAPI.o
 
-runTest: $(SRC)Testing
+run: $(SRC)Testing
 	./src/Testing svg/test.svg
 
-valTest: $(SRC)Testing
+val: $(SRC)Testing
 	valgrind -v ./src/Testing svg/test.svg
