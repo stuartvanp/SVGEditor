@@ -36,7 +36,7 @@ int groupLength(Group * grp);
 
 
 
-int validDoc(xmlDoc * doc, char * schemaFile);
+bool validDoc(xmlDoc * doc, char * schemaFile);
 bool validSVG(SVGimage * img);
 bool validRect(Rectangle * rect);
 bool validCircle(Circle * circ);
@@ -925,10 +925,7 @@ SVGimage* createValidSVGimage(char* fileName, char* schemaFile) {
         return NULL;          //exit if  file does not open properly
     }
 
-    
-
-
-    if (validDoc(doc, schemaFile) != 0) {
+    if (validDoc(doc, schemaFile) == false) {
         xmlFreeDoc(doc);        //free residual xml mallocs
         xmlCleanupParser();
         xmlMemoryDump();
@@ -964,7 +961,7 @@ SVGimage* createValidSVGimage(char* fileName, char* schemaFile) {
 }
 
 
-int validDoc(xmlDoc * doc, char * schemaFile) {
+bool validDoc(xmlDoc * doc, char * schemaFile) {
     xmlSchemaPtr schema = NULL;
     xmlSchemaParserCtxtPtr ctxt;
     xmlLineNumbersDefault(1);
@@ -976,15 +973,16 @@ int validDoc(xmlDoc * doc, char * schemaFile) {
     xmlSchemaFreeParserCtxt(ctxt);
 
     xmlSchemaValidCtxtPtr ctext;
-    int ret = 1;
-
+    int ret = 0;
     ctext = xmlSchemaNewValidCtxt(schema);
     xmlSchemaSetValidErrors(ctext, (xmlSchemaValidityErrorFunc) fprintf, (xmlSchemaValidityWarningFunc) fprintf, stderr);
     ret = xmlSchemaValidateDoc(ctext, doc);
     xmlSchemaFreeValidCtxt(ctext);
-
     xmlSchemaFree(schema);
-    return ret;
+    if (ret == 0) {
+        return true;
+    }
+    return false;
 }
 
 
@@ -995,7 +993,7 @@ xmlDoc * createXml(SVGimage * img) {
     xmlNs * ns = NULL;
 
 
-    doc = xmlNewDoc(BAD_CAST "01");    //creates doc and root node
+    doc = xmlNewDoc(BAD_CAST "1.0");    //creates doc and root node
     root_node = xmlNewNode(NULL, BAD_CAST "svg");
     xmlDocSetRootElement(doc, root_node);
     
@@ -1364,74 +1362,64 @@ SVGimage * fakeCreateSVG(xmlDoc * doc, char * schemaFile) {
 }
 
 
+bool validateSVGimage(SVGimage* img, char* schemaFile){
+
+    if (img == NULL || schemaFile == NULL){
+        return false;
+    }
+    if (validSVG(img) == false) {
+        return false;
+    }
+
+    xmlDoc * doc = createXml(img);
+    if (validDoc(doc, schemaFile) == false) {
+        docFree(doc);
+        return false;
+    }
+    docFree(doc);
+    
+    return true;
+}
+
+bool writeSVGimage(SVGimage* img, char* fileName){
+    if (img == NULL || fileName == NULL) {
+        return false;
+    }
+
+
+    xmlDoc * doc = createXml(img);
+    if (doc == NULL) {
+        return false;
+    }
+    
+    int ret = xmlSaveFormatFileEnc(fileName, doc, "UTF-8", 1);
+    if (ret == -1) {
+        docFree(doc);
+        return false;
+    }
+    docFree(doc);
+    return true;
+}
+
+
 int main (int argc, char * argv[]) {
 
 
-    //SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
-    //char * str = SVGimageToString(svg);
-    //xmlDoc * doc = createXml(svg);
-    //printf("%s", str);
-    //SVGimage *svg2 = fakeCreateSVG(doc, "svg.xsd");    
-    //docFree(doc);
-    //printf("***************************************************************************************************************");
-    //free(str);  
-    //str = SVGimageToString(svg2);
-    //printf("%s", str);
-    //deleteSVGimage(svg2);
-    //free(str);
-    //validSVG(svg);
-    //deleteSVGimage(svg);
-
-    Attribute * attrib = malloc(100);
-    attrib->name = malloc(100);
-    attrib->value = malloc(100);
-
-
-    Rectangle * rect = malloc(sizeof(Rectangle));
-    rect->x = 1;
-    rect->y = 2;
-    rect->width = 1;
-    rect->height = 1;
-    strcpy(rect->units, ""); 
-    rect->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
-
+    SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
+    char * str = SVGimageToString(svg);
+    printf("%s", str);
+    free(str);  
  
-    Circle * circ = malloc(sizeof(Circle));
-    circ->r = 1;
-    circ->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
 
+    writeSVGimage(svg, "write.svg");
 
-    Group * grp = malloc(sizeof(Group));
-    grp->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
-    grp->rectangles = initializeList(rectangleToString, deleteRectangle, compareAttributes);
-    grp->circles = initializeList(circleToString, deleteCircle, compareAttributes);
-    grp->paths =  initializeList(pathToString, deletePath, compareAttributes);
-    grp->groups = initializeList(groupToString, deleteGroup, compareAttributes);
+    SVGimage * svg2 = createValidSVGimage("write.svg", "svg.xsd");
 
-
-    Path * pth = malloc (sizeof(Path));
-    pth->data = malloc (sizeof(100));
-    pth->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
-
-
-    
-    SVGimage * svg = malloc(sizeof(SVGimage));
-    strcpy (svg->namespace, "fart");
-    svg->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
-    svg->rectangles = initializeList(rectangleToString, deleteRectangle, compareAttributes);
-    svg->circles = initializeList(circleToString, deleteCircle, compareAttributes);
-    svg->paths = initializeList(pathToString, deletePath, compareAttributes);
-    svg->groups = initializeList(groupToString, deleteGroup, compareAttributes);
-    insertBack(svg->otherAttributes, attrib);
-    insertBack(svg->rectangles, rect);
-    insertBack(svg->paths, pth);
-    insertBack(svg->circles, circ);
-    insertBack(svg->groups, grp);
-
-    printf("\n\n\n%d\n\n\n\n",validSVG(svg)); 
-
-    
+    str = SVGimageToString(svg2);
+    printf("%s", str);
     deleteSVGimage(svg);
+    deleteSVGimage(svg2);
+    free(str);
 
     return 0;
 }
