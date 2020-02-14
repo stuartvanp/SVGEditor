@@ -50,8 +50,7 @@ void circsXml(xmlNode * root, SVGimage * img, Group * grp);
 void pathsXml(xmlNode * root, SVGimage * img, Group * grp);
 void groupsXml(xmlNode * root, SVGimage * img, Group * grp);
 
-SVGimage * fakeCreateSVG(xmlDoc * doc, char * schemaFile);
-
+void circleAtt(List * circles, int index, Attribute * attrib);
 /* 
 *This function creates an svg struct that describes filename, an svg image
 *CREDIT: The first ~10 lines of code in the function, which handle the xml file
@@ -1311,56 +1310,6 @@ void docFree(xmlDoc * doc) {
     xmlMemoryDump();
 }
 
-//helper function to TEST my code, never used IRL
-SVGimage * fakeCreateSVG(xmlDoc * doc, char * schemaFile) {
-    xmlNode* root = NULL;
-    LIBXML_TEST_VERSION
-
-
-    if (doc == NULL) {
-        xmlFreeDoc(doc);
-        xmlCleanupParser();
-        return NULL;          //exit if  file does not open properly
-    }
-
-    
-
-
-    if (validDoc(doc, schemaFile) != 0) {
-        xmlFreeDoc(doc);        //free residual xml mallocs
-        xmlCleanupParser();
-        xmlMemoryDump();
-        return NULL;
-    }
-
-    root = xmlDocGetRootElement(doc);
-    
-    if (root == NULL){     //exit if getrootelement fails
-        xmlFreeDoc(doc);
-        xmlCleanupParser();
-        return NULL;
-    }
-    SVGimage * svg = malloc(sizeof(SVGimage)); //malloc struct
-    addNameSpace(svg, root);                   // add namespace, title, desc
-
-    svg->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);   //initialize all struct lists
-    svg->circles = initializeList(circleToString, deleteCircle, compareCircles);
-    svg->rectangles = initializeList(rectangleToString, deleteRectangle, compareRectangles);
-    svg->groups = initializeList(groupToString, deleteGroup, compareGroups);
-    svg->paths = initializeList(pathToString, deletePath, comparePaths);
- 
-    addAttributes(svg, root);  //add all the elements to the svg struct
-    addPaths(NULL, svg, root);
-    addCircles(NULL, svg, root);
-    addRectangles(NULL, svg, root);
-    addGroups(NULL, svg, root);
-
-    xmlFreeDoc(doc);        //free residual xml mallocs
-    xmlCleanupParser();
-    xmlMemoryDump(); 
-    return svg;   //return the completed struct
-}
-
 
 bool validateSVGimage(SVGimage* img, char* schemaFile){
 
@@ -1401,25 +1350,69 @@ bool writeSVGimage(SVGimage* img, char* fileName){
     return true;
 }
 
+void setAttribute(SVGimage* img, elementType elemType, int elemIndex, Attribute* newAttribute){
+    if (img == NULL || newAttribute == NULL) {
+        return;
+    }
+    if (newAttribute->name == NULL || newAttribute->value == NULL) {
+        return;
+    }
+    
+    if (elemType == CIRC){
+        if (elemIndex < 0 || elemIndex >= img->circles->length){ 
+            return;
+        }
+
+        circleAtt(img->circles, elemIndex, newAttribute);
+
+    }
+    return;
+}
+void circleAtt(List * circles, int index, Attribute * attrib){
+    ListIterator iter = createIterator(circles);
+    int item = -1;
+    Circle * circ;
+    do{
+        item++;
+        circ = nextElement(&iter);
+    }while (item != index);
+    printf("%s\n\n", attrib->name);
+    if (strcmp(attrib->name, "cx") == 0) {
+        circ->cx = atof(attrib->value);
+    }
+    if (strcmp(attrib->name, "cy") == 0) {
+        circ->cy = atof(attrib->value);
+    }
+    if (strcmp(attrib->name, "r") == 0) {
+        circ->r = atof(attrib->value);
+    }
+
+    printf("%s", circleToString(circ));
+}
 
 int main (int argc, char * argv[]) {
-
-
+    Attribute * attrib = malloc(sizeof(attrib));
+    attrib->name = malloc(100);
+    strcpy(attrib->name, "r");
+    attrib->value = malloc(100);
+    strcpy(attrib->value, "69pkk");
     SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
+    
+    setAttribute(svg, CIRC, 1, attrib);
+    
     char * str = SVGimageToString(svg);
-    printf("%s", str);
+    //printf("%s", str);
     free(str);  
  
-
-    writeSVGimage(svg, "write.svg");
-
+    
+    /* writeSVGimage(svg, "write.svg");
     SVGimage * svg2 = createValidSVGimage("write.svg", "svg.xsd");
 
     str = SVGimageToString(svg2);
     printf("%s", str);
+    free(str); */
     deleteSVGimage(svg);
-    deleteSVGimage(svg2);
-    free(str);
+   // deleteSVGimage(svg2);
 
     return 0;
 }
