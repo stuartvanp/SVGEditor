@@ -1355,33 +1355,33 @@ bool writeSVGimage(SVGimage* img, char* fileName){
 }
 
 void setAttribute(SVGimage* img, elementType elemType, int elemIndex, Attribute* newAttribute){
-     if (img == NULL || newAttribute == NULL) {
+     if (img == NULL || newAttribute == NULL) {  //checks for valid inpout
         return;
     } 
-     if (newAttribute->name == NULL || newAttribute->value == NULL) {
+     if (newAttribute->name == NULL || newAttribute->value == NULL) {  //checks attribute validity
         return;
     } 
-    if (elemType ==SVG_IMAGE) {
+    if (elemType ==SVG_IMAGE) {  //function call to add to svg
         svgAtt(img, newAttribute);
         return;
     }
     
-    if (elemType == CIRC){
+    if (elemType == CIRC){  //fucntionc call to add to circle
         if (elemIndex < 0 || elemIndex >= img->circles->length){ 
-            return;
+            return;   //checks index validity
         }
         circleAtt(img->circles, elemIndex, newAttribute);
         return;
     }
-    if (elemType == RECT) {
+    if (elemType == RECT) {  //function call to add to a rectangle
         if (elemIndex < 0|| elemIndex >= img->rectangles->length){
             return;
         }
         rectAtt(img->rectangles, elemIndex, newAttribute);
         return;
     }
-    if (elemType == PATH) {
-        if (elemIndex < 0 || elemIndex >= img->paths->length){
+    if (elemType == PATH) {  //function call to add to path
+        if (elemIndex < 0 || elemIndex >= img->paths->length){ 
             return;
         }
         pathAtt (img->paths, elemIndex, newAttribute);
@@ -1391,155 +1391,177 @@ void setAttribute(SVGimage* img, elementType elemType, int elemIndex, Attribute*
 }
 
 void svgAtt(SVGimage * img, Attribute * attrib) {
+    if (img == NULL) {
+        return;
+    }
+    //checks if attrib is desc, copies into description
     if (strcmp(attrib->name, "desc") == 0) {
         strncpy(img->description, attrib->value, 255);
         deleteAttribute(attrib);
         return;
     }
+
+    //checks if attrib is title, copies into title
     if (strcmp(attrib->name, "title") == 0){
         strncpy(img->title, attrib->value, 255);
         deleteAttribute(attrib);
         return;
     } 
-
+    //iterates through the attrobutes of the svg
     ListIterator iter = createIterator(img->otherAttributes);
     while (iter.current != NULL){
         Attribute * otherAtt = nextElement(&iter);
-        if (strcmp(otherAtt->name, attrib->name) == 0) {
+        if (strcmp(otherAtt->name, attrib->name) == 0) { //if a match is found
+            //reallocs pointer and copies in string
             otherAtt->value = realloc(otherAtt->value, sizeof(char) * strlen(attrib->value) + 10);
             strcpy(otherAtt->value, attrib->value);
-            deleteAttribute(attrib);
+            deleteAttribute(attrib);  //frees struct
             return;
         }
     }
+    //otherwise just adds attrib struct to the end of the list
     insertBack(img->otherAttributes, attrib);
     return;
-
 }
-
+//function for insertign attrib into circle index from circles
 void circleAtt(List * circles, int index, Attribute * attrib){
-    ListIterator iter = createIterator(circles);
+    if (circles == NULL) { //check
+        return;
+    }
+    ListIterator iter = createIterator(circles);  //iterates through list
     int item = -1;
-    int copied = 0;
     Circle * circ;
     do{
         item++;
         circ = nextElement(&iter);
-    }while (item != index);
-
+    }while (item != index);  //finds circle number index
+    //if attrib is cx, updates value and frees attrib
     if (strcmp(attrib->name, "cx") == 0) {
         circ->cx = atof(attrib->value);
         deleteAttribute(attrib);
+        return;
     }
-    else if (strcmp(attrib->name, "cy") == 0) {
+    //if attrib is cy, udate value and free attrib
+    if (strcmp(attrib->name, "cy") == 0) {
         circ->cy = atof(attrib->value);
         deleteAttribute(attrib);
+        return;
     }
-    else if (strcmp(attrib->name, "r") == 0) {
+    //if attrib is r, update valu and free attrib
+    if (strcmp(attrib->name, "r") == 0) {
         circ->r = atof(attrib->value);
         deleteAttribute(attrib);
+        return;
     }
-    else {
-        iter = createIterator(circ->otherAttributes);
-        while (iter.current != NULL){
-            Attribute * otherAtt = nextElement(&iter);
-            if (strcmp(otherAtt->name, attrib->name) == 0) {
-                otherAtt->value = realloc(otherAtt->value, sizeof(char) * strlen(attrib->value) + 10);
-                strcpy (otherAtt->value, attrib->value);
-                deleteAttribute(attrib);
-                copied = 1;
-                break;
-            }
-        }
-        if (!copied){
-            insertBack(circ->otherAttributes, attrib);
-        }
 
+    //otherwise itterates through the attrobutes
+    iter = createIterator(circ->otherAttributes);
+    while (iter.current != NULL){
+        Attribute * otherAtt = nextElement(&iter);
+        if (strcmp(otherAtt->name, attrib->name) == 0) {  //iff a match is found
+            //reallocs and copies in value, the deletes attrib
+            otherAtt->value = realloc(otherAtt->value, sizeof(char) * strlen(attrib->value) + 10);
+            strcpy (otherAtt->value, attrib->value);
+            deleteAttribute(attrib);
+            return;
+        }
     }
-    char * str = circleToString(circ);
-    printf("%s", str);
-    free(str);
-
+      //otherwise inserts attirb to back of attrib list
+    insertBack(circ->otherAttributes, attrib);
 }
 
 void rectAtt(List * rects, int index, Attribute * attrib) {
+    if (rects == NULL) {  //validate list
+        return;
+    }
     ListIterator iter = createIterator(rects);
     int item = -1;
     Rectangle * rect;
-    do {
+    do {  //loop finds the correct rectangle from the list
         item++;
         rect = nextElement(&iter);
 
     } while (item != index);
-
-    if (strcmp(attrib->name, "x") == 0){
+    //if attrib is x, upadtes value and deletes attrib
+    if (strcmp(attrib->name, "x") == 0){ 
         rect->x = atof(attrib->value);
         deleteAttribute(attrib);
         return;
     }
+    //if attrib is y, updates value and deletes attrib
     if (strcmp(attrib->name, "y") == 0){
         rect->y = atof(attrib->value);
         deleteAttribute(attrib);
         return;
     }
+    //if attrib is width, updates width and dletes attrib
     if (strcmp(attrib->name, "width") == 0){
         rect->width = atof(attrib->value);
         deleteAttribute(attrib);
         return;
     }
+    //if attrib is height, update height and deletes attribute
     if (strcmp(attrib->name, "height") == 0){
         rect->height = atof(attrib->value);
         deleteAttribute(attrib);
         return;
     }
+    //otherwise searches through attributes fro a match
     iter = createIterator(rect->otherAttributes);
     while (iter.current != NULL) {
         Attribute * otherAtt = nextElement(&iter);
         
-        if (strcmp (otherAtt->name, attrib->name) == 0) {
-            otherAtt->value  = realloc(otherAtt->value, sizeof(char) * strlen(attrib->value) + 10);
+        if (strcmp (otherAtt->name, attrib->name) == 0) { //finds a mathc 
+            //reallocs value, copies in value, deletes attrib
+            otherAtt->value  = realloc(otherAtt->value, sizeof(char) * strlen(attrib->value) + 10);  
             strcpy(otherAtt->value, attrib->value);
             deleteAttribute(attrib);
             return;
         }
     }
+    //otherwise just inserts in the back of the list
     insertBack(rect->otherAttributes, attrib);
     return;
 }
 
 void pathAtt(List * paths, int index, Attribute * attrib) {
+    if (paths == NULL) { //validates path list
+        return;
+    }
     ListIterator iter = createIterator(paths);
     int item = -1;
     Path * path;
     do {
         item++;
         path = nextElement(&iter);
-
-    } while (item != index);
-
+    } while (item != index);  //gets path number index from PAths
+    //if name is data, reallocs value, copies it, and deletes attribute
     if (strcmp(attrib->name, "data") == 0) {
         path->data = realloc(path->data, sizeof(char) * strlen(attrib->value) + 10);
         strcpy(path->data, attrib->value);
         deleteAttribute(attrib);
         return;
     }
-
+    //iteratrs through attributes for a match
     iter = createIterator(path->otherAttributes);
     while (iter.current != NULL) {
         Attribute * otherAtt = nextElement(&iter);
-        if (strcmp(otherAtt->name, attrib->name ) == 0){
+        if (strcmp(otherAtt->name, attrib->name) == 0){
+            //finds a match, reallocs and copies, deletes attrib
             otherAtt->value = realloc(otherAtt->value, sizeof(char) * strlen(attrib->value) + 10);
             strcpy(otherAtt->value, attrib->value);
             deleteAttribute(attrib);
             return;
         }
     }
-    insertBack(path->otherAttributes, attrib);    
-
-
+    //otheriwse just inserts attrib into the back of the lsit
+    insertBack(path->otherAttributes, attrib);
 }
 
 void groupAtt(List * groups, int index, Attribute * attrib) {
+    if (groups == NULL) {
+        return;
+    }
     ListIterator iter = createIterator(groups);
     int item = -1;
     Group * grp;
@@ -1567,18 +1589,21 @@ void groupAtt(List * groups, int index, Attribute * attrib) {
 int main (int argc, char * argv[]) {
     Attribute * attrib = malloc(sizeof(Attribute));
     attrib->name = malloc(100);
-    strcpy(attrib->name, "data");
+    strcpy(attrib->name, "kill");
     attrib->value = malloc(100);
     strcpy(attrib->value, "69fart");
     SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
     
-    setAttribute(svg, PATH, 2, attrib);
+    
+    setAttribute(svg, CIRC, 2, attrib);
+    //deleteAttribute(attrib);
+
     attrib = malloc(sizeof(Attribute));
     attrib->name = malloc(100);
-    strcpy(attrib->name, "fill");
+    strcpy(attrib->name, "kill");
     attrib->value = malloc(100);
     strcpy(attrib->value, "96chedda");
-    setAttribute(svg, PATH, 2, attrib);
+    setAttribute(svg, CIRC, 2, attrib);
 
     char * str = SVGimageToString(svg);
     printf("%s", str);
@@ -1592,6 +1617,7 @@ int main (int argc, char * argv[]) {
     printf("%s", str);
     free(str); */
     deleteSVGimage(svg);
+    //deleteAttribute(attrib);
     //deleteAttribute(attrib);
    // deleteSVGimage(svg2);
 
