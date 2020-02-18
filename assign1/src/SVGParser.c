@@ -1593,37 +1593,88 @@ void groupAtt(List * groups, int index, Attribute * attrib) {
     return;
 }
 
+//adds a component to the base level of an svg image
+void addComponent(SVGimage* img, elementType type, void* newElement){
+    if (img == NULL ||newElement == NULL) {
+        return;  //validates inputs
+    }
+    if (type == RECT) {
+        Rectangle * rect = newElement;
+        if (img->rectangles != NULL) {  //adds rectangle to img
+            insertBack(img->rectangles, rect);
+        }
+        return;
+    }
+    if(type == CIRC) {
+        Circle * circ = newElement;
+        if (img->circles != NULL) {
+            insertBack(img->circles, circ); //adds circle to img
+        }
+        return;
+    }
+    if (type == PATH) {
+        Path * path = newElement;
+        if (img->paths != NULL) {  //adds path to img
+            insertBack(img->paths, path);
+        }
+        return;
+    }
+}
+
 
 int main (int argc, char * argv[]) {
-    Attribute * attrib = malloc(sizeof(Attribute));
+ /*   Attribute * attrib = malloc(sizeof(Attribute));
     attrib->name = malloc(100);
     strcpy(attrib->name, "kill");
     attrib->value = malloc(100);
-    strcpy(attrib->value, "69fart");
+    strcpy(attrib->value, "69fart"); */
     SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
+    Rectangle * rect = malloc (sizeof(Rectangle));
+    rect->x = 99;
+    rect->y =88;
+    rect->width = 77;
+    rect->height = 66;
+    strcpy(rect->units, "");
+    rect->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
+    addComponent(svg, RECT, rect);
+
+    Circle * circ = malloc (sizeof(Circle));
+    circ-> cx = 111;
+    circ-> cy = 222;
+    circ-> r  = 333;
+    strcpy (circ->units, "");
+    circ->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
+    addComponent(svg, CIRC, circ);
+
+    Path * path = malloc(sizeof(Path));
+    path->data = malloc(100);
+    strcpy(path->data, "THIS IS MY PATH DATA");
+    path->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
+    addComponent(svg, PATH, path);
+    addComponent(NULL, PATH, path);
     
-    
-    setAttribute(svg, GROUP, 0, attrib);
+    //setAttribute(svg, GROUP, 0, attrib);
     //deleteAttribute(attrib);
 
-    attrib = malloc(sizeof(Attribute));
+    Attribute * attrib = malloc(sizeof(Attribute));
     attrib->name = malloc(100);
     strcpy(attrib->name, "fill");
     attrib->value = malloc(100);
     strcpy(attrib->value, "96chedda");
-    setAttribute(svg, GROUP, 0, attrib);
+    setAttribute(svg, CIRC, 3, attrib); 
 
+    
     char * str = SVGimageToString(svg);
     printf("%s", str);
     free(str);  
  
-    
     /* writeSVGimage(svg, "write.svg");
     SVGimage * svg2 = createValidSVGimage("write.svg", "svg.xsd");
-
+    
     str = SVGimageToString(svg2);
     printf("%s", str);
     free(str); */
+    //free(rect);
     deleteSVGimage(svg);
     //deleteAttribute(attrib);
     //deleteAttribute(attrib);
