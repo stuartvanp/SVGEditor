@@ -1386,6 +1386,12 @@ void setAttribute(SVGimage* img, elementType elemType, int elemIndex, Attribute*
         }
         pathAtt (img->paths, elemIndex, newAttribute);
     }
+    if (elemType == GROUP) {
+        if (elemIndex < 0 || elemIndex >= img->groups->length){ 
+            return;
+        }
+        groupAtt(img->groups, elemIndex, newAttribute);
+    }
 
     return;
 }
@@ -1559,7 +1565,7 @@ void pathAtt(List * paths, int index, Attribute * attrib) {
 }
 
 void groupAtt(List * groups, int index, Attribute * attrib) {
-    if (groups == NULL) {
+    if (groups == NULL) {  //validates list
         return;
     }
     ListIterator iter = createIterator(groups);
@@ -1569,18 +1575,20 @@ void groupAtt(List * groups, int index, Attribute * attrib) {
         item++;
         grp = nextElement(&iter);
 
-    } while (item != index);
+    } while (item != index);  //gets correct group
 
-    iter = createIterator(grp->otherAttributes);
+    iter = createIterator(grp->otherAttributes);  //iterates through the attribtues
     while (iter.current != NULL) {
         Attribute * otherAtt = nextElement(&iter);
-        if (strcmp(otherAtt->name, attrib->name) == 0){
+        if (strcmp(otherAtt->name, attrib->name) == 0){  //if a match is found
+            //reallocs value, copies it in, frees attribute
             otherAtt->value = realloc(otherAtt->value, sizeof(char) * strlen(attrib->value) + 10);
             strcpy(otherAtt->value, attrib->value);
             deleteAttribute(attrib);
             return;
         }
     }
+    //otherwise inserts attribute into back of list
     insertBack(grp->otherAttributes, attrib);
     return;
 }
@@ -1595,15 +1603,15 @@ int main (int argc, char * argv[]) {
     SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
     
     
-    setAttribute(svg, CIRC, 2, attrib);
+    setAttribute(svg, GROUP, 0, attrib);
     //deleteAttribute(attrib);
 
     attrib = malloc(sizeof(Attribute));
     attrib->name = malloc(100);
-    strcpy(attrib->name, "kill");
+    strcpy(attrib->name, "fill");
     attrib->value = malloc(100);
     strcpy(attrib->value, "96chedda");
-    setAttribute(svg, CIRC, 2, attrib);
+    setAttribute(svg, GROUP, 0, attrib);
 
     char * str = SVGimageToString(svg);
     printf("%s", str);
