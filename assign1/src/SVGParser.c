@@ -1620,65 +1620,119 @@ void addComponent(SVGimage* img, elementType type, void* newElement){
         return;
     }
 }
+//function converts attirbute to json
+char* attrToJSON(const Attribute *a){
+    char * str = malloc(5);
+    sprintf(str, "{}");  //dummy json if invalid input
+    if (a == NULL) {  //checks validity
+        return str;
+    }
+    if (a->name == NULL || a->value == NULL){
+        return str;
+    }
+    //format output
+    str = realloc(str, sizeof(char) * (50 + strlen(a->value) + strlen(a->name)));
+    sprintf(str, "{\"name\":\"%s\",\"value\":\"%s\"}", a->name, a->value);
+    return str;
+}
+
+char* circleToJSON(const Circle *c){
+    char * str = malloc(5);
+    sprintf(str, "{}");  //dummy json if invalid input
+    if (c == NULL) {
+        return str;
+    }
+    str = realloc (str, sizeof(char) * (300 + strlen (c->units)));  //formats string
+    sprintf(str, "{\"cx\":%.2f,\"cy\":%.2f,\"r\":%.2f,\"numAttr\":%d,\"units\":\"%s\"}", c->cx, c->cy, c->r, c->otherAttributes->length, c->units);
+    return str;
+}
+
+char* rectToJSON(const Rectangle *r){
+    char * str = malloc(5);
+    sprintf(str, "{}");  //dummy json if invalid input
+    if (r == NULL) {
+        return str;
+    }
+    //format json string
+    str = realloc (str, sizeof(char) * (300 + strlen (r->units)));  //formats string
+    sprintf(str, "{\"x\":%.2f,\"y\":%.2f,\"w\":%.2f,\"h\":%.2f,\"numAttr\":%d,\"units\":\"%s\"}", r->x, r->y, r->width, r->height, r->otherAttributes->length, r->units);
+    return str;
+}
+
+char* pathToJSON(const Path *p){
+    char * str = malloc(5);
+    sprintf(str, "{}");  //dummy json if invalid input
+    if (p == NULL) {
+        return str;
+    }
+    char * data = malloc(sizeof(char) * (strlen(p->data) + 1));
+    strcpy(data, p->data);  //truncating path data to 64 chars
+    data[64] = '\0';
+    str = realloc(str, sizeof(char) * (200));
+    sprintf(str, "{\"d\":\"%s\",\"numAttr\":%d}", data, p->otherAttributes->length);
+    free(data);  //free temp path data and return str
+    return str;
+}
+
+char* groupToJSON(const Group *g){
+    char * str = malloc(5);
+    sprintf(str, "{}");  //dummy json if invalid input
+    if (g == NULL) {
+        return str;
+    }
+    //calculates the length of the children
+    //malloc and format str
+    str = realloc (str, sizeof(char) * 200);
+    sprintf(str, "{\"children\":%d,\"numAttr\":%d}", groupLength((Group *)g), getLength(g->otherAttributes));
+    return str;
+}
+
+char* SVGtoJSON(const SVGimage* img){
+    char * str = malloc(5);
+    sprintf(str, "{}");  //dummy json if invalid input
+    if (img == NULL) {
+        return str;
+    }
+    //creates a list of all rects, etc
+    List * rects = getRects((SVGimage *)img);
+    List * circs = getCircles((SVGimage *)img);
+    List * paths = getPaths((SVGimage *)img);
+    List * groups = getGroups((SVGimage *)img);
+    //malloc and format str
+    str = realloc(str, sizeof(char) * 200);
+    sprintf(str, "{\"numRect\":%d,\"numCirc\":%d,\"numPaths\":%d,\"numGroups\":%d}", getLength(rects), getLength(circs), getLength(paths), getLength(groups));
+    //frees lists created
+    freeSoftList(rects); 
+    freeSoftList(circs);
+    freeSoftList(paths);
+    freeSoftList(groups);
+    return str;
+}
 
 
 int main (int argc, char * argv[]) {
- /*   Attribute * attrib = malloc(sizeof(Attribute));
-    attrib->name = malloc(100);
-    strcpy(attrib->name, "kill");
-    attrib->value = malloc(100);
-    strcpy(attrib->value, "69fart"); */
     SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
-    Rectangle * rect = malloc (sizeof(Rectangle));
-    rect->x = 99;
-    rect->y =88;
-    rect->width = 77;
-    rect->height = 66;
-    strcpy(rect->units, "");
-    rect->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
-    addComponent(svg, RECT, rect);
-
-    Circle * circ = malloc (sizeof(Circle));
-    circ-> cx = 111;
-    circ-> cy = 222;
-    circ-> r  = 333;
-    strcpy (circ->units, "");
-    circ->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
-    addComponent(svg, CIRC, circ);
-
-    Path * path = malloc(sizeof(Path));
-    path->data = malloc(100);
-    strcpy(path->data, "THIS IS MY PATH DATA");
-    path->otherAttributes = initializeList(attributeToString, deleteAttribute, compareAttributes);
-    addComponent(svg, PATH, path);
-    addComponent(NULL, PATH, path);
-    
-    //setAttribute(svg, GROUP, 0, attrib);
-    //deleteAttribute(attrib);
-
     Attribute * attrib = malloc(sizeof(Attribute));
     attrib->name = malloc(100);
     strcpy(attrib->name, "fill");
     attrib->value = malloc(100);
-    strcpy(attrib->value, "96chedda");
-    setAttribute(svg, CIRC, 3, attrib); 
+    strcpy(attrib->value, "FFFFFFFF"); 
+
+
+    char * str = groupToJSON(getFromBack(svg->groups));
+    printf("\n\n%s\n\n", str);
+    free(str);
+    //setAttribute(svg, GROUP, 0, attrib);
+    deleteAttribute(attrib);
+
+ 
 
     
-    char * str = SVGimageToString(svg);
-    printf("%s", str);
+    str = SVGimageToString(svg);
+    //printf("%s", str);
     free(str);  
- 
-    /* writeSVGimage(svg, "write.svg");
-    SVGimage * svg2 = createValidSVGimage("write.svg", "svg.xsd");
-    
-    str = SVGimageToString(svg2);
-    printf("%s", str);
-    free(str); */
-    //free(rect);
+
     deleteSVGimage(svg);
-    //deleteAttribute(attrib);
-    //deleteAttribute(attrib);
-   // deleteSVGimage(svg2);
 
     return 0;
 }

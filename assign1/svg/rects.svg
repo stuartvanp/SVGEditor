@@ -6,10 +6,10 @@
     <rect x="0.5cm" y="0.5cm" width="2cm" height="1cm"/>
     <rect x="0.5cm" y="2cm" width="1cm" height="1.5cm"/>
     <rect x="3cm" y="0.5cm" width="1.5cm" height="2cm"/>
-    <rect x="3.5cm" y="3cm" width="1cm" height="0.5cm"/>
+    <rect x="3.5" y="3" width="1" height="0.5"/>
 
   <!-- Show outline of canvas using 'rect' element -->
-  <rect x=".01cm" y=".01cm" width="4.98cm" height="3.98cm"
+  <rect x=".01" y=".01" width="4.98" height="3.98"
         fill="none" stroke="blue" stroke-width=".02cm" />
 
 </svg>
