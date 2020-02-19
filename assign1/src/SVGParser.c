@@ -1560,7 +1560,7 @@ void pathAtt(List * paths, int index, Attribute * attrib) {
         path = nextElement(&iter);
     } while (item != index);  //gets path number index from PAths
     //if name is data, reallocs value, copies it, and deletes attribute
-    if (strcmp(attrib->name, "data") == 0) {
+    if (strcmp(attrib->name, "d") == 0) {
         path->data = realloc(path->data, sizeof(char) * strlen(attrib->value) + 10);
         strcpy(path->data, attrib->value);
         deleteAttribute(attrib);
@@ -1910,7 +1910,7 @@ Rectangle* JSONtoRect(const char* svgString){
 Circle* JSONtoCircle(const char* svgString){
     return NULL;
 }
-
+/* 
 int main (int argc, char * argv[]) {
     SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
 
@@ -1935,4 +1935,4 @@ int main (int argc, char * argv[]) {
  
 
 
- 
+  */
