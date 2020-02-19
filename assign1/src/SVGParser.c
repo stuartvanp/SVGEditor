@@ -963,7 +963,13 @@ SVGimage* createValidSVGimage(char* fileName, char* schemaFile) {
     return svg;   //return the completed struct
 }
 
-
+/* 
+CREDIT:
+When writing this function, the website
+http://knol2share.blogspot.com/2009/05/validate-xml-against-xsd-in-c.html
+was used extenisvley as a reference
+I do not take complete credit for the code written in this function
+ */
 bool validDoc(xmlDoc * doc, char * schemaFile) {
     xmlSchemaPtr schema = NULL;
     xmlSchemaParserCtxtPtr ctxt;
@@ -988,7 +994,12 @@ bool validDoc(xmlDoc * doc, char * schemaFile) {
     return false;
 }
 
-
+/* 
+CREDIT
+when writng this function, the website
+http://www.xmlsoft.org/examples/tree2.c
+was used extensively as a reference
+I do not take complete credit for the code written in this function */
 //function takes an svg struct and uses it to create an xml. does not free the svg
 xmlDoc * createXml(SVGimage * img) {
     xmlDoc * doc = NULL;
@@ -1314,7 +1325,7 @@ void docFree(xmlDoc * doc) {
     xmlMemoryDump();
 }
 
-
+//boolean function to validate an svg image struct
 bool validateSVGimage(SVGimage* img, char* schemaFile){
 
     if (img == NULL || schemaFile == NULL){
@@ -1334,6 +1345,13 @@ bool validateSVGimage(SVGimage* img, char* schemaFile){
     return true;
 }
 
+
+/* 
+CREDIT: When writing this function
+the website http://www.xmlsoft.org/examples/tree2.c
+was used extensively as a reference. I do not take full credit
+for the code in this function
+ */
 bool writeSVGimage(SVGimage* img, char* fileName){
     if (img == NULL || fileName == NULL) {
         return false;
@@ -1667,7 +1685,9 @@ char* pathToJSON(const Path *p){
     }
     char * data = malloc(sizeof(char) * (strlen(p->data) + 1));
     strcpy(data, p->data);  //truncating path data to 64 chars
-    data[64] = '\0';
+    if (strlen(data) > 64){
+        data[64] = '\0';
+    }
     str = realloc(str, sizeof(char) * (200));
     sprintf(str, "{\"d\":\"%s\",\"numAttr\":%d}", data, p->otherAttributes->length);
     free(data);  //free temp path data and return str
@@ -1709,21 +1729,197 @@ char* SVGtoJSON(const SVGimage* img){
     return str;
 }
 
+char* attrListToJSON(const List *list){
+    int count = 0;
+    char * str = malloc(5);  //creates dummy return
+    strcpy(str, "[]");
+    if (list == NULL) {  // checks for valdiity
+        return str;
+    }
+    if (getLength((List*)list) == 0) {  //checks if list is empty
+        return str;
+    }
+    str[1] = '\0'; //removes closing bracket
+    ListIterator iter = createIterator((List*)list); //creates iterator
+    while (iter.current != NULL) {
+        Attribute * attr = nextElement(&iter);
+        char * toAdd = attrToJSON(attr);
+        char * buf = malloc(sizeof(char) * (strlen(str) + 50));  //copies str for the sprintf function
+        strcpy(buf, str);
+        str = realloc(str, sizeof(char) * (strlen(str) + strlen(toAdd) + 50));
+        
+        if (count == 0) {  //doesnt print the comma on the first loop iteration
+            sprintf(str, "%s%s", buf, toAdd);
+        }
+        else{
+            sprintf(str, "%s,%s", buf, toAdd);
+        }
+        count++;
+        free(toAdd);  //frees the attrToJSON string
+        free(buf);    //frees buffer
+    }
+    strcat(str, "]"); //adds final closing bracket and returns
+    return str;
+}
+
+char* circListToJSON(const List *list){
+    int count = 0;
+    char * str = malloc(5);  //creates dummy return
+    strcpy(str, "[]");
+    if (list == NULL) {  // checks for valdiity
+        return str;
+    }
+    if (getLength((List*)list) == 0) {  //checks if list is empty
+        return str;
+    }
+    str[1] = '\0'; //removes closing bracket
+
+    ListIterator iter = createIterator((List*)list);
+    while (iter.current != NULL) {
+        Circle * circ = nextElement(&iter);
+        char * toAdd = circleToJSON(circ);
+        char * buf = malloc(sizeof(char) * (strlen(str) + 50));
+        strcpy(buf, str);
+        str = realloc(str, sizeof(char) * (strlen(str) + strlen(toAdd) + 50));
+        if (count == 0) {  //doesnt print the comma on the first loop iteration
+            sprintf(str, "%s%s", buf, toAdd);
+            count++;
+        }
+        else{
+            sprintf(str, "%s,%s", buf, toAdd);
+        }
+
+        free(toAdd);  //frees the attrToJSON string
+        free(buf);    //frees buffer
+    }
+    strcat(str, "]");  //adds closing bracket nd returns
+    return str;
+}
+
+char* rectListToJSON(const List *list){
+    int count = 0;
+    char * str = malloc(5);  //creates dummy return
+    strcpy(str, "[]");
+    if (list == NULL) {  // checks for valdiity
+        return str;
+    }
+    if (getLength((List*)list) == 0) {  //checks if list is empty
+        return str;
+    }
+    str[1] = '\0'; //removes closing bracket
+
+    ListIterator iter = createIterator((List*)list);
+    while (iter.current != NULL) {
+        Rectangle * rect = nextElement(&iter);
+        char * toAdd = rectToJSON(rect);
+        char * buf = malloc(sizeof(char) * (strlen(str) + 50));
+        strcpy(buf, str);
+        str = realloc(str, sizeof(char) * (strlen(str) + strlen(toAdd) + 50));
+        if (count == 0) {  //doesnt print the comma on the first loop iteration
+            sprintf(str, "%s%s", buf, toAdd);
+            count++;
+        }
+        else{
+            sprintf(str, "%s,%s", buf, toAdd);
+        }
+
+        free(toAdd);  //frees the attrToJSON string
+        free(buf);    //frees buffer
+    }
+    strcat(str, "]");  //adds closing bracket nd returns
+    return str;
+}
+
+
+char* pathListToJSON(const List *list){
+    int count = 0;
+    char * str = malloc(5);  //creates dummy return
+    strcpy(str, "[]");
+    if (list == NULL) {  // checks for valdiity
+        return str;
+    }
+    if (getLength((List*)list) == 0) {  //checks if list is empty
+        return str;
+    }
+    str[1] = '\0'; //removes closing bracket
+
+    ListIterator iter = createIterator((List*)list);
+    while (iter.current != NULL) {
+        Path * path = nextElement(&iter);
+        char * toAdd = pathToJSON(path);
+        char * buf = malloc(sizeof(char) * (strlen(str) + 50));
+        strcpy(buf, str);
+        str = realloc(str, sizeof(char) * (strlen(str) + strlen(toAdd) + 50));
+        if (count == 0) {  //doesnt print the comma on the first loop iteration
+            sprintf(str, "%s%s", buf, toAdd);
+            count++;
+        }
+        else{
+            sprintf(str, "%s,%s", buf, toAdd);
+        }
+
+        free(toAdd);  //frees the attrToJSON string
+        free(buf);    //frees buffer
+    }
+    strcat(str, "]");  //adds closing bracket nd returns
+    return str;
+}
+
+
+
+char* groupListToJSON(const List *list){
+    int count = 0;
+    char * str = malloc(5);  //creates dummy return
+    strcpy(str, "[]");
+    if (list == NULL) {  // checks for valdiity
+        return str;
+    }
+    if (getLength((List*)list) == 0) {  //checks if list is empty
+        return str;
+    }
+    str[1] = '\0'; //removes closing bracket
+
+    ListIterator iter = createIterator((List*)list);
+    while (iter.current != NULL) {
+        Group * grp = nextElement(&iter);
+        char * toAdd = groupToJSON(grp);
+        char * buf = malloc(sizeof(char) * (strlen(str) + 50));
+        strcpy(buf, str);
+        str = realloc(str, sizeof(char) * (strlen(str) + strlen(toAdd) + 50));
+        if (count == 0) {  //doesnt print the comma on the first loop iteration
+            sprintf(str, "%s%s", buf, toAdd);
+            count++;
+        }
+        else{
+            sprintf(str, "%s,%s", buf, toAdd);
+        }
+
+        free(toAdd);  //frees the attrToJSON string
+        free(buf);    //frees buffer
+    }
+    strcat(str, "]");  //adds closing bracket nd returns
+    return str;
+}
+
+SVGimage* JSONtoSVG(const char* svgString){
+    return NULL;
+}
+Rectangle* JSONtoRect(const char* svgString){
+    return NULL;
+}
+Circle* JSONtoCircle(const char* svgString){
+    return NULL;
+}
 
 int main (int argc, char * argv[]) {
     SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
-    Attribute * attrib = malloc(sizeof(Attribute));
-    attrib->name = malloc(100);
-    strcpy(attrib->name, "fill");
-    attrib->value = malloc(100);
-    strcpy(attrib->value, "FFFFFFFF"); 
 
 
-    char * str = groupToJSON(getFromBack(svg->groups));
+    //Rectangle * rect = getFromBack(svg->rectangles);
+    char * str = groupListToJSON(svg->groups);//svg->otherAttributes);
     printf("\n\n%s\n\n", str);
     free(str);
     //setAttribute(svg, GROUP, 0, attrib);
-    deleteAttribute(attrib);
 
  
 
