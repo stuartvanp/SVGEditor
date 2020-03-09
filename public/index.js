@@ -27,6 +27,19 @@ $(document).ready(function() {
         }
     });
 
+    $.ajax({
+        type: 'get',
+        dataType: 'json',
+        url:'myfirst',
+    
+        
+        success:function(data) {
+   
+            console.log(data.foo);
+        }
+
+    })
+
     // Event listener form example , we can use this instead explicitly listening for events
     // No redirects if possible
     $('#someform').submit(function(e){

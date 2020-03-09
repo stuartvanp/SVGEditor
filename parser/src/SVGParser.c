@@ -1910,6 +1910,14 @@ Rectangle* JSONtoRect(const char* svgString){
 Circle* JSONtoCircle(const char* svgString){
     return NULL;
 }
+
+
+char * createSVGJSON(char * filename, char * schema) {
+    SVGimage * svg = createValidSVGimage(filename, shema);
+    char * JSON = SVGtoJSON(svg);
+    deleteSVGimage(svg);
+    return JSON;
+}
 /* 
 int main (int argc, char * argv[]) {
     SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
