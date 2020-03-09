@@ -55,6 +55,10 @@ void svgAtt(SVGimage * img, Attribute * attrib);
 void rectAtt(List * rects, int index, Attribute * attrib);
 void pathAtt(List * paths, int index, Attribute * attrib);
 void groupAtt(List * groups, int index, Attribute * attrib);
+
+
+char * createSVGJSON(char * filename, char * schema);
+
 /* 
 *This function creates an svg struct that describes filename, an svg image
 *CREDIT: The first ~10 lines of code in the function, which handle the xml file
@@ -1913,18 +1917,19 @@ Circle* JSONtoCircle(const char* svgString){
 
 
 char * createSVGJSON(char * filename, char * schema) {
-    SVGimage * svg = createValidSVGimage(filename, shema);
+    SVGimage * svg = createValidSVGimage(filename, schema);
     char * JSON = SVGtoJSON(svg);
     deleteSVGimage(svg);
     return JSON;
 }
 /* 
 int main (int argc, char * argv[]) {
-    SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
+    //SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
 
 
     //Rectangle * rect = getFromBack(svg->rectangles);
-    char * str = groupListToJSON(svg->groups);//svg->otherAttributes);
+    //char * str = groupListToJSON(svg->groups);//svg->otherAttributes);
+    char * str = createSVGJSON(argv[1], "svg.xsd");
     printf("\n\n%s\n\n", str);
     free(str);
     //setAttribute(svg, GROUP, 0, attrib);
@@ -1932,15 +1937,15 @@ int main (int argc, char * argv[]) {
  
 
     
-    str = SVGimageToString(svg);
+    //str = SVGimageToString(svg);
     //printf("%s", str);
-    free(str);  
+    //free(str);  
 
-    deleteSVGimage(svg);
+    //deleteSVGimage(svg);
 
     return 0;
 }
- 
+ */
 
 
-  */
+  

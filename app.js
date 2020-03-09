@@ -71,14 +71,17 @@ app.get('/uploads/:name', function(req , res){
 
 //******************** Your code goes here ******************** 
 
-//let myLibrary = ffi.Library('./parser/bin/libsvgparse.so',{
-//    "createValidSVGimage": ["string", ["string", "string"]] 
-///});
+let Lib = ffi.Library('./parser/bin/libsvgparse.so',{
+    "createSVGJSON": ["string", ["string", "string"]] 
+});
 
 app.get('/myfirst', function(rec, res){
   res.send({foo:"NEPHEW"});
-  console.log("NEPHEW");
+  console.log("NEPHEWAPP");
 })
+
+let mystr = Lib.createSVGJSON("uploads/rects.svg", "parser/svg.xsd");
+console.log(mystr);
 
 
 
