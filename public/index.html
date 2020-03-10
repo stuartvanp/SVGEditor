@@ -27,36 +27,16 @@
     <h5>FILE LOG</h5>
 
     <div id="LOG" style="overflow-x: auto; overflow-y: scroll; max-height: 400px; display: block">
-    <table border="1" class = "table">
-        <thead id = "LOGROW" class="thead-dark">
-        <TR> 
-            <TH><center>Image <BR> (click to download)</center></TH> 
-            <TH><center>File name<BR> (click to download)</center></TH> 
-            <TH><center>File size</center></TH> 
-            <TH><center>Number of Rectangles</center></TH> <TH><center>Number of Circles</center></TH>
-            <TH><center>Number of Paths</center></TH> 
-            <TH><center>Number of Groups</center></TH>
-        </TR>
-        <TR> 
-            <TD style="text-align:center"><a href="quad01_A2.svg" download> <img src = "uploads/quad01_A2.svg" width = 200> </a> </TD>
-            <TD style="text-align:center"> <a href="quad01_A2.svg" download> quad01_A2</a></TD>
-            <TD style="text-align:center"> 1 KB </TD>
-            <TD style="text-align:center">1</TD>
-            <TD style="text-align:center">5</TD>
-            <TD style="text-align:center">2</TD>
-            <TD style="text-align:center">3</TD>
-        </TR>
-    </thead>
-    </table>
+    FILE LOG EMPTY
     </div>
 
 
     <BR>
     <H5> Upload a File (only valid SVG files will be accepted) </H5>
-    <form ref = "uploadSVG" id = "uploadSVG">
-        <input type = "file" accept = "image/svg">
+    <form method= "POST" action = "/upload" ref = "upload" id = "shit" enctype="multipart/form-data">
+        <input type = "file" accept = "svg" name = "uploadFile">
         <BR>
-        <input type = "submit" class="btn btn-info" value = "upload">
+        <button type = "submit" class="btn btn-info"  id = " upload" value = "upload">UPLOAD </button>
     </form>
 
     <hr>

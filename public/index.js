@@ -43,10 +43,6 @@ $(document).ready(function() {
         success:function(data){
             console.log(data);
             files = data;
-
-            if (data.length == 0) {        
-                $('#LOG').html("FILE LOG EMTPY");
-            }
             if (data.length > 0) {
                 $('#LOG').html('<table border="1" class = "table">' +
                         '<thead id = "LOGROW" class="thead-dark">' +
@@ -68,13 +64,13 @@ $(document).ready(function() {
                         url: '/getSVGJSON',
                         data: {file: filename},
                         success: function(data){
-                            console.log(data);
+                            console.log("LOADING FILE " + files[i]);
 
                             let svgjson = JSON.parse(data);
                             $('#LOGROW').append ('<TR><TD style="text-align:center"><a href="' + files[i] + '" download> <img src = "uploads/' +
                              files[i] + '" width = 200> </a> </TD>' +
                             '<TD style="text-align:center"> <a href="' + files[i] + '" download>' + files[i] + '</a></TD>' + 
-                            '<TD style="text-align:center"> 1 KB </TD>' +
+                            '<TD style="text-align:center">'+ svgjson.size +'KB</TD>' +
                             '<TD style="text-align:center">' + svgjson.numRect + '</TD>'+
                             '<TD style="text-align:center">' + svgjson.numCirc + '</TD>'+
                             '<TD style="text-align:center">' + svgjson.numPaths + '</TD>'+
@@ -99,4 +95,8 @@ $(document).ready(function() {
             //Create an object for connecting to another waypoint
         });
     });
+
+
+
+
 });

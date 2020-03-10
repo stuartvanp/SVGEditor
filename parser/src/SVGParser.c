@@ -1919,10 +1919,23 @@ Circle* JSONtoCircle(const char* svgString){
 char * createSVGJSON(char * filename, char * schema) {
     SVGimage * svg = createValidSVGimage(filename, schema);
     char * JSON = SVGtoJSON(svg);
+    JSON[strlen(JSON) - 1] = '\0';
+
+    FILE * fptr = fopen (filename, "r");
+    fseek(fptr, 0, SEEK_END);
+    int size = round (ftell(fptr) / 1000);
+    fclose(fptr);
+    JSON = realloc (JSON, sizeof(char) * (strlen(JSON) + 100));
+
+    char buffer[250];
+    sprintf(buffer, ",\"size\":%d}", size);
+
+
+    strcat(JSON, buffer);
     deleteSVGimage(svg);
     return JSON;
 }
-/* 
+/*
 int main (int argc, char * argv[]) {
     //SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
 
