@@ -75,31 +75,23 @@ let Lib = ffi.Library('./parser/bin/libsvgparse.so',{
     "createSVGJSON": ["string", ["string", "string"]] 
 });
 
-app.get('/myfirst', function(rec, res){
-  res.send({foo:"NEPHEW"});
-  console.log("NEPHEWAPP");
+
+
+
+
+app.get('/allfiles', function(rec, res) {
+  let fs = require('fs');
+  let files = fs.readdirSync('uploads/');
+  res.send(files);
 })
 
-let mystr = Lib.createSVGJSON("uploads/rects.svg", "parser/svg.xsd");
-console.log(mystr);
+app.get('/getSVGJSON', function(rec, res){
+  let str = "uploads/" + rec.query.file;
+  let Jstr = Lib.createSVGJSON(str, "parser/svg.xsd");
+  console.log(Jstr);
+  res.send(Jstr);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+})
 
 
 //Sample endpoint
