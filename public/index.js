@@ -100,3 +100,11 @@ $(document).ready(function() {
 
 
 });
+
+function validateUpload(){
+    let myfile = document.forms[uploadbttn][uploadFile].value;
+        
+    
+    return false;
+
+}

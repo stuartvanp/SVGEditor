@@ -47,9 +47,11 @@ app.post('/upload', function(req, res) {
   if (req.files.uploadFile == null) {
     res.redirect('/');
   }
-
   if (req.files.uploadFile != null) {
-  let uploadFile = req.files.uploadFile;
+    let uploadFile = req.files.uploadFile;
+    if (uploadFile.name.split('.').pop() != "svg") {
+      return res.status(400).send('Invalid file type was uploaded. Upload Failed. Click back on browser to return to previous screen');
+    }
  
   // Use the mv() method to place the file somewhere on your server
     uploadFile.mv('uploads/' + uploadFile.name, function(err) {
