@@ -58,6 +58,7 @@ void groupAtt(List * groups, int index, Attribute * attrib);
 
 
 char * createSVGJSON(char * filename, char * schema);
+char * getTitle(char * fileName, char * schema);
 
 /* 
 *This function creates an svg struct that describes filename, an svg image
@@ -1918,7 +1919,11 @@ Circle* JSONtoCircle(const char* svgString){
 
 char * createSVGJSON(char * filename, char * schema) {
     SVGimage * svg = createValidSVGimage(filename, schema);
+    if (svg == NULL) {
+        return NULL;
+    }
     char * JSON = SVGtoJSON(svg);
+    
     JSON[strlen(JSON) - 1] = '\0';
 
     FILE * fptr = fopen (filename, "r");
@@ -1935,6 +1940,29 @@ char * createSVGJSON(char * filename, char * schema) {
     deleteSVGimage(svg);
     return JSON;
 }
+
+char * getTitle(char * fileName, char * schema){
+    SVGimage * svg = createValidSVGimage(fileName, schema);
+    if (svg == NULL){
+        return NULL;
+    }
+    char * title = malloc (sizeof(char) * 257);
+    strcpy(title, svg->title);
+    deleteSVGimage(svg);
+    return title;
+
+}
+
+char * getDesc(char * filename, char * schema){
+    SVGimage * svg = createValidSVGimage(filename, schema);
+    if (svg == NULL){
+        return NULL;
+    }
+    char * desc = malloc (sizeof(char) * 257);
+    strcpy(desc, svg->description);
+    deleteSVGimage(svg);
+    return desc;
+}
 /*
 int main (int argc, char * argv[]) {
     //SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
@@ -1942,8 +1970,12 @@ int main (int argc, char * argv[]) {
 
     //Rectangle * rect = getFromBack(svg->rectangles);
     //char * str = groupListToJSON(svg->groups);//svg->otherAttributes);
-    char * str = createSVGJSON(argv[1], "svg.xsd");
-    printf("\n\n%s\n\n", str);
+    char * str = getTitle(argv[1], "svg.xsd");
+    printf("***%s***\n", str);
+    free(str);
+
+    str = getDesc(argv[1], "svg.xsd");
+    printf("***%s***\n", str);
     free(str);
     //setAttribute(svg, GROUP, 0, attrib);
 
@@ -1958,7 +1990,7 @@ int main (int argc, char * argv[]) {
 
     return 0;
 }
- */
+*/
 
 
   

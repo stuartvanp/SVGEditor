@@ -75,6 +75,9 @@ $(document).ready(function() {
                             '<TD style="text-align:center">' + svgjson.numCirc + '</TD>'+
                             '<TD style="text-align:center">' + svgjson.numPaths + '</TD>'+
                             '<TD style="text-align:center">' + svgjson.numGroups + '</TD>)</TR>');
+                            $("#svgDropDown").append('<option value = "' + files[i] + '">' + files[i] + '</option>');
+
+
                     }
                 })
             }
@@ -96,15 +99,31 @@ $(document).ready(function() {
         });
     });
 
+    $('#chooseSVG').change(function(e) {
+        let selection = document.getElementById('svgDropDown');
+        let filename = selection.value;
 
+        console.log(filename);
+        $("#imageDisplay").html('<TD colspan="5" style="text-align:center"><img src = "'+filename+ '"width = 800></TD>');
 
+            $.ajax({
+            type: 'get',
+            url: '/titledesc',
+            data: {file: filename},
+            success: function(data){
+                console.log(data.Title);
+                console.log(data.Desc);
+                
+                $("#title").html(data.Title);
+                $("#desc").html(data.Desc);
 
+                },
+                fail: function(error){
+                    console.log("Failed to load filenames");
+                }
+            })
+
+    });
 });
 
-function validateUpload(){
-    let myfile = document.forms[uploadbttn][uploadFile].value;
-        
-    
-    return false;
 
-}

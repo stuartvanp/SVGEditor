@@ -79,7 +79,9 @@ app.get('/uploads/:name', function(req , res){
 //******************** Your code goes here ******************** 
 
 let Lib = ffi.Library('./parser/bin/libsvgparse.so',{
-    "createSVGJSON": ["string", ["string", "string"]] 
+    "createSVGJSON": ["string", ["string", "string"]],
+    "getTitle": ["string", ["string", "string"]],
+    "getDesc": ["string",["string", "string"]]
 });
 
 
@@ -107,6 +109,17 @@ app.get('/someendpoint', function(req , res){
     foo: retStr
   });
 });
+
+app.get('/titledesc', function(rec, res){
+  let str = "uploads/" + rec.query.file;
+  let title = Lib.getTitle(str, "parser/svg.xsd");
+  let desc = Lib.getDesc(str, "parser/svg.xsd");
+  res.send({
+    Title: title,
+    Desc: desc
+  });
+
+})
 
 app.listen(portNum);
 console.log('Running app at localhost: ' + portNum);

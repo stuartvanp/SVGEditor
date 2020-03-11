@@ -4,8 +4,8 @@
     <title>STUART'S SVG IMAGE HANDLER</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="CHANGE ME">
-    <meta name="keywords" content="CHANGE ME">
+    <meta name="description" content="A website for storing and modfiying svg images">
+    <meta name="keywords" content="SVG, edit, image, svg">
     <meta name="author" content="Stuart van Pinxteren">
     <!-- Load jquery, bootstrap -->
     <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -33,7 +33,7 @@
 
     <BR>
     <H5> Upload a File (only valid SVG files will be accepted) </H5>
-    <form name = "uploadbttn"method= "POST" action = "/upload" ref = "upload" id = "sh" onsubmit="return validateUpload()" enctype="multipart/form-data">
+    <form name = "uploadbttn"method= "POST" action = "/upload" ref = "upload" id = "sh" enctype="multipart/form-data">
         <input type = "file" accept = "image/*" name = "uploadFile">
         <BR>
         <button type = "submit" class="btn btn-info"  id = " upload" value = "upload">UPLOAD </button>
@@ -42,14 +42,8 @@
     <hr>
     <H5>SVG IMAGE SUMMARY</H5>
     <form ref = "chooseSVG" id = "chooseSVG">
-        <label for = "SVGs">Choose an image </label>
-        <select id ="SVGs" name = "poop">
-            <option value ="option1"> quad01.svg</option>">
-            <option value ="option2"> quad02.svg</option>">
-            <option value ="option3"> quad03.svg</option>">
-            <option value ="option4"> quad04.svg</option>">
-            <option value ="option5"> quad05.svg</option>">
-        </select>
+        <label for = "svgDropDown">Choose an image </label>
+        <select id ="svgDropDown" ></select>
     </form>
 
     <div style="overflow-x: auto; overflow-y: auto; max-height: 1000px">
@@ -57,7 +51,7 @@
         <TR> 
             <TH colspan="5"> <center>IMAGE</center> </TH>
         </TR>
-        <TR>
+        <TR id ="imageDisplay">
             <TD colspan="5" style="text-align:center"><img src = "uploads/quad01_A2.svg" width = 800></TD>
         </TR>
         <TR>
@@ -65,10 +59,8 @@
             <TH colspan="2"> <center>description</center></TH>
         </TR>
         <TR>
-            <TD>Example quad01 - quadratic Bézier commands in path data</TD>
-            <TD colspan="2">Picture showing a "Q" a "T" command,
-                along with annotations showing the control points
-                and end points</TD>
+            <TD id = "title" style="text-align:center">MegaFart</TD>
+            <TD id = "desc"  style="text-align:center" colspan="2">fart</TD>
         </TR>
             <TH style="text-align:center"> Component</TH>
             <TH style="text-align:center"> Summary</TH>
@@ -94,11 +86,6 @@
             <TD style="text-align:center">2 child elements</TD>
             <TD style="text-align:center">1</TD>
         </TR>
-
-
-
-
-
     </table>
     </div>
 
