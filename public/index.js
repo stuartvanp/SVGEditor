@@ -110,18 +110,49 @@ $(document).ready(function() {
             type: 'get',
             url: '/titledesc',
             data: {file: filename},
-            success: function(data){
-                console.log(data.Title);
-                console.log(data.Desc);
-                
+            success: function(data){                
                 $("#title").html(data.Title);
                 $("#desc").html(data.Desc);
 
                 },
                 fail: function(error){
-                    console.log("Failed to load filenames");
+                    console.log("Failed to load title and desc");
+                }
+            });
+
+            $.ajax({
+                type: 'get',
+                url: '/rects',
+                data: {file: filename},
+                success:function(data) {
+                    
+                    let rects = JSON.parse(data);
+                    for (let i = 0; i < rects.length; i++) {
+                        $("#components").append('<TR><TD style="text-align:center">RECTANGLE ' + (i + 1) +  
+                        '</TD><TD style="text-align:center">Upper left corner: x = ' + rects[i].x + rects[i].units + ', y =' +
+                        rects[i].y + rects[i].units + '<BR>Width: ' + rects[i].w + rects[i].units + ' Height: '
+                        + rects[i].h + rects[i].units + 
+                        '</TD><TD style="text-align:center">Other Attributes: ' + rects[i].numAttr + 
+                        '</TD></TR>');
+                    }
                 }
             })
+
+            $.ajax ({
+                type: 'get',
+                url: '/paths',
+                data: {file:filename},
+                success: function(data){
+                    let paths = JSON.parse(data);
+                    for (let i = 0; i < paths.length; i++) {
+                        $("#components").append('<TR><TD style="text-align:center">PATH ' + (i + 1) +  
+                        '</TD><TD style="text-align:center">' + paths[i].d + 
+                        '</TD><TD style="text-align:center">Other Attributes: ' + paths[i].numAttr + 
+                        '</TD></TR>');
+                    }
+                }
+            });
+
 
     });
 });

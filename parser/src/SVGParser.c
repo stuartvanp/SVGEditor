@@ -59,7 +59,7 @@ void groupAtt(List * groups, int index, Attribute * attrib);
 
 char * createSVGJSON(char * filename, char * schema);
 char * getTitle(char * fileName, char * schema);
-
+char * getPathsJSON (char * filename, char * schema);
 /* 
 *This function creates an svg struct that describes filename, an svg image
 *CREDIT: The first ~10 lines of code in the function, which handle the xml file
@@ -1963,6 +1963,27 @@ char * getDesc(char * filename, char * schema){
     deleteSVGimage(svg);
     return desc;
 }
+
+char * getPathsJSON (char * filename, char * schema) {
+    SVGimage * svg = createValidSVGimage (filename, schema);
+    if (svg == NULL || validateSVGimage(svg, schema) == false) {
+        return NULL;
+    }
+
+    char * str = pathListToJSON(svg->paths);
+    deleteSVGimage(svg);
+    return str;
+}
+
+char * getRectsJSON(char * filename, char * schema) {
+    SVGimage * svg = createValidSVGimage(filename, schema);
+    if (svg == NULL || validateSVGimage(svg, schema) == false) {
+        return NULL;
+    }
+    char * str = rectListToJSON(svg->rectangles);
+    deleteSVGimage(svg);
+    return str;
+}
 /*
 int main (int argc, char * argv[]) {
     //SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
@@ -1974,7 +1995,7 @@ int main (int argc, char * argv[]) {
     printf("***%s***\n", str);
     free(str);
 
-    str = getDesc(argv[1], "svg.xsd");
+    str = getRectsJSON(argv[1], "svg.xsd");
     printf("***%s***\n", str);
     free(str);
     //setAttribute(svg, GROUP, 0, attrib);

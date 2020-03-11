@@ -81,7 +81,9 @@ app.get('/uploads/:name', function(req , res){
 let Lib = ffi.Library('./parser/bin/libsvgparse.so',{
     "createSVGJSON": ["string", ["string", "string"]],
     "getTitle": ["string", ["string", "string"]],
-    "getDesc": ["string",["string", "string"]]
+    "getDesc": ["string",["string", "string"]],
+    "getPathsJSON": ["string",["string", "string"]],
+    "getRectsJSON": ["string", ["string", "string"]]
 });
 
 
@@ -120,6 +122,20 @@ app.get('/titledesc', function(rec, res){
   });
 
 })
+
+app.get('/rects', function(rec, res){
+  let str = "uploads/" + rec.query.file;
+  let rects = Lib.getRectsJSON(str, "parser/svg.xsd");
+  console.log(rects);
+  res.send(rects);
+});
+
+
+app.get('/paths', function(rec, res){
+  let str = "uploads/" + rec.query.file;
+  let paths = Lib.getPathsJSON(str, "parser/svg.xsd");
+  res.send(paths);
+});
 
 app.listen(portNum);
 console.log('Running app at localhost: ' + portNum);
