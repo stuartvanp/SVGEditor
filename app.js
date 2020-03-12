@@ -141,7 +141,7 @@ app.get('/circs', function(rec, res){
   res.send(circs);
 
 
-})
+});
 
 app.get('/paths', function(rec, res){
   let str = "uploads/" + rec.query.file;
@@ -154,7 +154,7 @@ app.get('/groups', function(rec, res){
   let groups = Lib.getGroupsJSON(str, "parser/svg.xsd");
   res.send(groups);
   
-})
+});
 
 app.get('/getAtt', function(rec, res){
   let str = "uploads/" + rec.query.file;
@@ -174,7 +174,18 @@ app.get('/getAtt', function(rec, res){
   }
   res.send(atts);
 
-})
+});
+
+app.get('/updateTitle', function(rec, res){
+
+  let title = rec.query.ttl;
+  let desc = rec.query.dsc;
+  let file = "uploads/" + rec.query.file;
+  console.log(title, desc, file);
+
+
+
+});
 
 
 app.listen(portNum);

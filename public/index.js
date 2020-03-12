@@ -115,8 +115,8 @@ $(document).ready(function() {
         e.preventDefault();
         let title = document.getElementById('titleIn').value;
         let desc = document.getElementById('descIn').value;
-        console.log(title);
-        console.log(desc);
+        let filename = document.getElementById('titleIn').name;
+
 
         if (title.length > 255) {
             console.log("Title too long");
@@ -128,7 +128,16 @@ $(document).ready(function() {
             alert("Description must be 255 characters or less");
             return;
         }
+        $.ajax({
+            type: 'get',
+            url: '/updateTitle',
+            data: {ttl: title,
+            dsc: desc,
+            file: filename},
+            success: function(data){
+            }
 
+        })
 
 
 
@@ -148,7 +157,7 @@ function setTable(filename){
             $("#title").html(data.Title);
             $("#desc").html(data.Desc);
             $("#titlediv").html('<label for="titleIn">Title: </label>' +
-            '<input type = "text" id = "titleIn" name = "titleIn" value = "' + data.Title+'">');
+            '<input type = "text" id = "titleIn" name = "'+filename +'" value = "' + data.Title+'">');
             $("#descdiv").html('<label for="descIn">Description: </label>' + 
             "<input type = 'text' id = 'descIn' name = 'descIn' value = '"+ data.Desc+"'>");
             
