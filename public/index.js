@@ -97,6 +97,8 @@ $(document).ready(function() {
         $('#blah').html("Form has data: "+$('#entryBox').val());
         e.preventDefault();
         //Pass data to the Ajax call, so it gets passed to the server
+        console.log("PORRRRRK");
+
         $.ajax({
             //Create an object for connecting to another waypoint
         });
@@ -108,9 +110,29 @@ $(document).ready(function() {
         setTable(filename);
         
     });
-    
+
+    $('#TDform').submit(function(e){
+        e.preventDefault();
+        let title = document.getElementById('titleIn').value;
+        let desc = document.getElementById('descIn').value;
+        console.log(title);
+        console.log(desc);
+
+        if (title.length > 255) {
+            console.log("Title too long");
+            alert("Title must be 255 characters or less!");
+            return;
+        }
+        if (desc.length > 255) {
+            console.log("Desc too long");
+            alert("Description must be 255 characters or less");
+            return;
+        }
 
 
+
+
+    });
     
 });
 
@@ -125,6 +147,11 @@ function setTable(filename){
         success: function(data){                
             $("#title").html(data.Title);
             $("#desc").html(data.Desc);
+            $("#titlediv").html('<label for="titleIn">Title: </label>' +
+            '<input type = "text" id = "titleIn" name = "titleIn" value = "' + data.Title+'">');
+            $("#descdiv").html('<label for="descIn">Description: </label>' + 
+            "<input type = 'text' id = 'descIn' name = 'descIn' value = '"+ data.Desc+"'>");
+            
 
             },
             fail: function(error){
@@ -206,7 +233,6 @@ function setTable(filename){
 
 
 function showAttr(id, name){
-    console.log(id);
     let index = id.match(/\d+/g).map(Number)[0];
     let type = id[0];
     $.ajax({
@@ -227,5 +253,13 @@ function showAttr(id, name){
 
 function uploadF(uploadFile){
     console.log("YEET");
+
+}
+
+function editTD(title, desc){
+    console.log(title, desc);
+    if (title.length > 255) {
+        console.log("TOO LONG TITLE");
+    }
 
 }
