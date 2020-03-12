@@ -109,6 +109,9 @@ $(document).ready(function() {
         
     });
     
+
+
+    
 });
 
 function setTable(filename){
@@ -220,7 +223,9 @@ function showAttr(id, name){
             }
         }
     });
-    
+}
 
+function uploadF(uploadFile){
+    console.log("YEET");
 
 }
