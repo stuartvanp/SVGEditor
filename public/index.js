@@ -57,7 +57,6 @@ $(document).ready(function() {
                     '</thead>' +
                     '</table>' );
                for (let i = 0; i < data.length; i++){
-                    console.log(files[i]);
                     let filename= files[i];
                     $.ajax({
                         type: 'get',
@@ -76,7 +75,9 @@ $(document).ready(function() {
                             '<TD style="text-align:center">' + svgjson.numPaths + '</TD>'+
                             '<TD style="text-align:center">' + svgjson.numGroups + '</TD>)</TR>');
                             $("#svgDropDown").append('<option value = "' + files[i] + '">' + files[i] + '</option>');
-
+                            if (i == 0 ) {
+                                setTable(files[i]);
+                            }
 
                     }
                 })
@@ -86,7 +87,9 @@ $(document).ready(function() {
         fail: function(error){
             console.log("Failed to load filenames");
         }
-    })
+    });
+
+
 
     // Event listener form example , we can use this instead explicitly listening for events
     // No redirects if possible
@@ -102,59 +105,122 @@ $(document).ready(function() {
     $('#chooseSVG').change(function(e) {
         let selection = document.getElementById('svgDropDown');
         let filename = selection.value;
-
-        console.log(filename);
-        $("#imageDisplay").html('<TD colspan="5" style="text-align:center"><img src = "'+filename+ '"width = 800></TD>');
-
-            $.ajax({
-            type: 'get',
-            url: '/titledesc',
-            data: {file: filename},
-            success: function(data){                
-                $("#title").html(data.Title);
-                $("#desc").html(data.Desc);
-
-                },
-                fail: function(error){
-                    console.log("Failed to load title and desc");
-                }
-            });
-
-            $.ajax({
-                type: 'get',
-                url: '/rects',
-                data: {file: filename},
-                success:function(data) {
-                    
-                    let rects = JSON.parse(data);
-                    for (let i = 0; i < rects.length; i++) {
-                        $("#components").append('<TR><TD style="text-align:center">RECTANGLE ' + (i + 1) +  
-                        '</TD><TD style="text-align:center">Upper left corner: x = ' + rects[i].x + rects[i].units + ', y =' +
-                        rects[i].y + rects[i].units + '<BR>Width: ' + rects[i].w + rects[i].units + ' Height: '
-                        + rects[i].h + rects[i].units + 
-                        '</TD><TD style="text-align:center">Other Attributes: ' + rects[i].numAttr + 
-                        '</TD></TR>');
-                    }
-                }
-            })
-
-            $.ajax ({
-                type: 'get',
-                url: '/paths',
-                data: {file:filename},
-                success: function(data){
-                    let paths = JSON.parse(data);
-                    for (let i = 0; i < paths.length; i++) {
-                        $("#components").append('<TR><TD style="text-align:center">PATH ' + (i + 1) +  
-                        '</TD><TD style="text-align:center">' + paths[i].d + 
-                        '</TD><TD style="text-align:center">Other Attributes: ' + paths[i].numAttr + 
-                        '</TD></TR>');
-                    }
-                }
-            });
-
-
+        setTable(filename);
+        
     });
+    
 });
 
+function setTable(filename){
+    console.log(filename);
+    $("#imageDisplay").html('<TD colspan="5" style="text-align:center"><img src = "'+filename+ '"width = 800></TD>');
+        //gets tittle and description
+        $.ajax({
+        type: 'get',
+        url: '/titledesc',
+        data: {file: filename},
+        success: function(data){                
+            $("#title").html(data.Title);
+            $("#desc").html(data.Desc);
 
+            },
+            fail: function(error){
+                console.log("Failed to load title and desc");
+            }
+        });
+        $('#tablebody').html('');
+        //gets rectangles
+        $.ajax({
+            type: 'get',
+            url: '/rects',
+            data: {file: filename},
+            success:function(data) {
+                
+                let rects = JSON.parse(data);
+                for (let i = 0; i < rects.length; i++) {
+                    $("#tablebody").append('<TR><TD style="text-align:center" id ="rect' + i +'">RECTANGLE ' + (i + 1) +  
+                    '</TD><TD style="text-align:center">Upper left corner: x = ' + rects[i].x + rects[i].units + ', y =' +
+                    rects[i].y + rects[i].units + '<BR>Width: ' + rects[i].w + rects[i].units + ' Height: '
+                    + rects[i].h + rects[i].units + 
+                    '</TD><TD style="text-align:center">Other Attributes: ' + rects[i].numAttr + 
+                    '</TD><TD><button onClick = "showAttr(this.id, this.name)" id = "rect' + i + '" name = "' +filename + 
+                    '">Show Attributes</button></TD>/TR>');
+                }
+            }
+        });
+        //gets circles
+        $.ajax({
+            type: 'get',
+            url: '/circs',
+            data: {file: filename},
+            success:function(data) {
+                let circs = JSON.parse(data);
+                for (let i = 0; i < circs.length; i++) {
+                    $("#tablebody").append('<TR><TD style="text-align:center"> CIRCLE ' + (i + 1) +  
+                    '</TD><TD style="text-align:center">Centre: x = ' + circs[i].cx + circs[i].units + ', y =' +
+                    circs[i].cy + circs[i].units + ' Radius: ' + circs[i].r + circs[i].units +
+                    '</TD><TD style="text-align:center">Other Attributes: ' + circs[i].numAttr + 
+                    '</TD><TD><button onClick = "showAttr(this.id, this.name)" id = "circ' + i  + '" name = "' +filename  + 
+                    '">Show Attributes</button></TD</TR>');
+                }
+            }
+        });
+
+        //gets paths
+        $.ajax ({
+            type: 'get',
+            url: '/paths',
+            data: {file:filename},
+            success: function(data){
+                let paths = JSON.parse(data);
+                for (let i = 0; i < paths.length; i++) {
+                    $("#tablebody").append('<TR><TD style="text-align:center">PATH ' + (i + 1) +  
+                    '</TD><TD style="text-align:center">' + paths[i].d + 
+                    '</TD><TD style="text-align:center">Other Attributes: ' + paths[i].numAttr + 
+                    '</TD><TD><button onClick = "showAttr(this.id, this.name)" id = "path' + i  + '" name = "' +filename  + 
+                    '">Show Attributes</button></TD></TR>');
+                }
+            }
+        });
+        //gets groups
+        $.ajax ({
+            type: 'get',
+            url: '/groups',
+            data: {file:filename},
+            success: function(data) {
+                let groups =JSON.parse(data);
+                for (let i = 0; i < groups.length; i++) {
+                    $("#tablebody").append('<TR><TD style="text-align:center">GROUP ' + (i + 1) +  
+                    '</TD><TD style="text-align:center">' + groups[i].children + ' Children' + 
+                    '</TD><TD style="text-align:center">Other Attributes: ' + groups[i].numAttr + 
+                    '</TD><TD><button onClick = "showAttr(this.id, this.name)" id = "group' + i  + '" name = "' +filename  + 
+                    '">Show Attributes</button></TD></TR>');
+                }
+            }
+        });
+
+}
+
+
+function showAttr(id, name){
+    console.log(id);
+    let index = id.match(/\d+/g).map(Number)[0];
+    let type = id[0];
+    $.ajax({
+        type: 'get',
+        url: '/getAtt',
+        data: {file: name,
+        elem: type,
+        num: index},
+        success: function(data){
+            attribs = JSON.parse(data);
+            $("#otherAtts").html('OTHER ATTRIBUTES<BR>');
+            for (let i = 0; i < attribs.length; i++) {
+                $("#otherAtts").append(attribs[i].name + ": " + attribs[i].value + "<BR>");
+            }
+        }
+    });
+    
+
+
+}

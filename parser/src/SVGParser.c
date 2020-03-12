@@ -60,6 +60,14 @@ void groupAtt(List * groups, int index, Attribute * attrib);
 char * createSVGJSON(char * filename, char * schema);
 char * getTitle(char * fileName, char * schema);
 char * getPathsJSON (char * filename, char * schema);
+char * getCircsJSON(char * filename, char * schema);
+char * getRectsJSON(char * filename, char * schema);
+
+char * getRectAtt(char * filename, char * schema, int index);
+char * getCircAtt(char * filename, char * schema, int index);
+char * getPathAtt(char * filename, char * schema, int index);
+
+
 /* 
 *This function creates an svg struct that describes filename, an svg image
 *CREDIT: The first ~10 lines of code in the function, which handle the xml file
@@ -1919,10 +1927,13 @@ Circle* JSONtoCircle(const char* svgString){
 
 char * createSVGJSON(char * filename, char * schema) {
     SVGimage * svg = createValidSVGimage(filename, schema);
-    if (svg == NULL) {
+    if (svg == NULL || validateSVGimage(svg, schema) == false){
         return NULL;
     }
     char * JSON = SVGtoJSON(svg);
+    if (JSON == NULL) {
+        return NULL;
+    }
     
     JSON[strlen(JSON) - 1] = '\0';
 
@@ -1943,7 +1954,7 @@ char * createSVGJSON(char * filename, char * schema) {
 
 char * getTitle(char * fileName, char * schema){
     SVGimage * svg = createValidSVGimage(fileName, schema);
-    if (svg == NULL){
+    if (svg == NULL || validateSVGimage(svg, schema) == false){
         return NULL;
     }
     char * title = malloc (sizeof(char) * 257);
@@ -1955,7 +1966,7 @@ char * getTitle(char * fileName, char * schema){
 
 char * getDesc(char * filename, char * schema){
     SVGimage * svg = createValidSVGimage(filename, schema);
-    if (svg == NULL){
+    if (svg == NULL || validateSVGimage(svg, schema) == false){
         return NULL;
     }
     char * desc = malloc (sizeof(char) * 257);
@@ -1984,6 +1995,102 @@ char * getRectsJSON(char * filename, char * schema) {
     deleteSVGimage(svg);
     return str;
 }
+
+
+char * getCircsJSON(char * filename, char * schema) {
+    SVGimage * svg = createValidSVGimage(filename, schema);
+    if (svg == NULL || validateSVGimage(svg, schema) == false) {
+        return NULL;
+    }
+    char * str = circListToJSON(svg->circles);
+    deleteSVGimage(svg);
+    return str;
+}
+
+char * getGroupsJSON(char * filename, char * schema) {
+    SVGimage * svg = createValidSVGimage(filename, schema);
+    if (svg == NULL || validateSVGimage(svg, schema) == false) {
+        return NULL;
+    }
+    char * str = groupListToJSON(svg->groups);
+    deleteSVGimage(svg);
+    return str;
+}
+
+
+char * getRectAtt(char * filename, char * schema, int index){
+    SVGimage * svg = createValidSVGimage(filename, schema);
+    if (svg == NULL || validateSVGimage(svg, schema) == false) {
+        return NULL;
+    }
+    ListIterator iter = createIterator(svg->rectangles); 
+    int item = -1;
+    Rectangle * rect;
+    do{
+        item++;
+        rect = nextElement(&iter);
+    }while (item != index);  //finds element number index
+    char * str = attrListToJSON(rect->otherAttributes);
+    deleteSVGimage(svg);
+    return str;
+}
+
+char * getCircAtt(char * filename, char * schema, int index){
+    SVGimage * svg = createValidSVGimage(filename, schema);
+    if (svg == NULL || validateSVGimage(svg, schema) == false) {
+        return NULL;
+    }
+    ListIterator iter = createIterator(svg->circles); 
+    int item = -1;
+    Circle * circ;
+
+    do{
+        item++;
+        circ = nextElement(&iter);
+    }while (item != index);  //finds element number index
+    char * str = attrListToJSON(circ->otherAttributes);
+    deleteSVGimage(svg);
+    return str;
+}
+
+char * getPathAtt(char * filename, char * schema, int index){
+    SVGimage * svg = createValidSVGimage(filename, schema);
+    if (svg == NULL || validateSVGimage(svg, schema) == false) {
+        return NULL;
+    }
+    ListIterator iter = createIterator(svg->paths); 
+    int item = -1;
+    Path * path;
+
+    do{
+        item++;
+        path = nextElement(&iter);
+    }while (item != index);  //finds element number index
+    char * str = attrListToJSON(path->otherAttributes);
+    deleteSVGimage(svg);
+    return str;
+}
+
+
+char * getGroupAtt(char * filename, char * schema, int index){
+    SVGimage * svg = createValidSVGimage(filename, schema);
+    if (svg == NULL || validateSVGimage(svg, schema) == false) {
+        return NULL;
+    }
+    ListIterator iter = createIterator(svg->groups); 
+    int item = -1;
+    Group * group;
+
+    do{
+        item++;
+        group = nextElement(&iter);
+    }while (item != index);  //finds element number index
+    char * str = attrListToJSON(group->otherAttributes);
+    deleteSVGimage(svg);
+    return str;
+}
+
+
 /*
 int main (int argc, char * argv[]) {
     //SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
@@ -1995,7 +2102,7 @@ int main (int argc, char * argv[]) {
     printf("***%s***\n", str);
     free(str);
 
-    str = getRectsJSON(argv[1], "svg.xsd");
+    str = getGroupAtt(argv[1], "svg.xsd", 2);
     printf("***%s***\n", str);
     free(str);
     //setAttribute(svg, GROUP, 0, attrib);
@@ -2012,6 +2119,7 @@ int main (int argc, char * argv[]) {
     return 0;
 }
 */
+
 
 
   

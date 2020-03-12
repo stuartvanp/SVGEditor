@@ -83,7 +83,13 @@ let Lib = ffi.Library('./parser/bin/libsvgparse.so',{
     "getTitle": ["string", ["string", "string"]],
     "getDesc": ["string",["string", "string"]],
     "getPathsJSON": ["string",["string", "string"]],
-    "getRectsJSON": ["string", ["string", "string"]]
+    "getRectsJSON": ["string",["string", "string"]],
+    "getCircsJSON": ["string",["string", "string"]],
+    "getGroupsJSON": ["string",["string", "string"]],
+    "getRectAtt": ["string", ["string", "string", "int"]],
+    "getCircAtt": ["string", ["string", "string", "int"]],
+    "getPathAtt": ["string", ["string", "string", "int"]],
+    "getGroupAtt": ["string", ["string", "string", "int"]]
 });
 
 
@@ -126,16 +132,50 @@ app.get('/titledesc', function(rec, res){
 app.get('/rects', function(rec, res){
   let str = "uploads/" + rec.query.file;
   let rects = Lib.getRectsJSON(str, "parser/svg.xsd");
-  console.log(rects);
   res.send(rects);
 });
 
+app.get('/circs', function(rec, res){
+  let str = "uploads/" + rec.query.file;
+  let circs = Lib.getCircsJSON(str, "parser/svg.xsd");
+  res.send(circs);
+
+
+})
 
 app.get('/paths', function(rec, res){
   let str = "uploads/" + rec.query.file;
   let paths = Lib.getPathsJSON(str, "parser/svg.xsd");
   res.send(paths);
 });
+
+app.get('/groups', function(rec, res){
+  let str = "uploads/" + rec.query.file;
+  let groups = Lib.getGroupsJSON(str, "parser/svg.xsd");
+  res.send(groups);
+  
+})
+
+app.get('/getAtt', function(rec, res){
+  let str = "uploads/" + rec.query.file;
+  let atts;
+  
+  if (rec.query.elem == 'r'){
+    atts = Lib.getRectAtt(str,"parser/svg.xsd", rec.query.num );
+  }
+  if (rec.query.elem == 'c'){
+    atts = Lib.getCircAtt(str,"parser/svg.xsd", rec.query.num );
+  }
+  if (rec.query.elem == 'p'){
+    atts = Lib.getPathAtt(str,"parser/svg.xsd", rec.query.num );
+  }
+  if (rec.query.elem == 'g'){
+    atts = Lib.getGroupAtt(str,"parser/svg.xsd", rec.query.num );
+  }
+  res.send(atts);
+
+})
+
 
 app.listen(portNum);
 console.log('Running app at localhost: ' + portNum);
