@@ -89,7 +89,8 @@ let Lib = ffi.Library('./parser/bin/libsvgparse.so',{
     "getRectAtt": ["string", ["string", "string", "int"]],
     "getCircAtt": ["string", ["string", "string", "int"]],
     "getPathAtt": ["string", ["string", "string", "int"]],
-    "getGroupAtt": ["string", ["string", "string", "int"]]
+    "getGroupAtt": ["string", ["string", "string", "int"]],
+    "updateTitleDesc": ["int",["string", "string", "string", "string"]]
 });
 
 
@@ -181,7 +182,8 @@ app.get('/updateTitle', function(rec, res){
   let title = rec.query.ttl;
   let desc = rec.query.dsc;
   let file = "uploads/" + rec.query.file;
-  console.log(title, desc, file);
+  let pass = Lib.updateTitleDesc(file, "parser/svg.xsd", title, desc);
+  res.send({stat:pass});
 
 
 

@@ -135,13 +135,31 @@ $(document).ready(function() {
             dsc: desc,
             file: filename},
             success: function(data){
+                console.log(data.stat);
+                if (data.stat == 1) {
+                    location.reload();
+                    console.log("HELEO")
+                }
+                else {
+                    alert("failed to update title/desc");
+                }  
+            },
+            fail: function(data){
+                console.log("FAILED TO UPDATE TITLE/DESC")
             }
-
-        })
-
-
-
+        });
     });
+    $("#addRectF").submit(function(e){
+        e.preventDefault();
+        console.log("ATTEMPTING TO ADD RECTANGLE");
+        e.preventDefault();
+
+    })
+    $("#addCircF").submit(function(e){
+        e.preventDefault();
+        console.log("ATTEMPTING TO ADD CIRCLE");
+
+    })
     
 });
 

@@ -67,6 +67,8 @@ char * getRectAtt(char * filename, char * schema, int index);
 char * getCircAtt(char * filename, char * schema, int index);
 char * getPathAtt(char * filename, char * schema, int index);
 
+bool updateTitleDesc(char * filename, char * schema, char * title, char * desc);
+
 
 /* 
 *This function creates an svg struct that describes filename, an svg image
@@ -2090,7 +2092,20 @@ char * getGroupAtt(char * filename, char * schema, int index){
     return str;
 }
 
-
+bool updateTitleDesc(char * filename, char * schema, char * title, char * desc) {
+    SVGimage * svg = createValidSVGimage(filename, schema);
+    if (svg == NULL || validateSVGimage(svg, schema) == false) {
+        return 0;
+    }
+    if (strlen(title) > 255 || strlen(desc) > 255) {
+        return 0;
+    }
+    strcpy(svg->title, title);
+    strcpy(svg->description, desc);
+    bool pass = writeSVGimage(svg, filename);
+    deleteSVGimage(svg);
+    return pass;
+}
 /*
 int main (int argc, char * argv[]) {
     //SVGimage * svg = createValidSVGimage(argv[1], "svg.xsd");
@@ -2102,9 +2117,9 @@ int main (int argc, char * argv[]) {
     printf("***%s***\n", str);
     free(str);
 
-    str = getGroupAtt(argv[1], "svg.xsd", 2);
-    printf("***%s***\n", str);
-    free(str);
+    bool pass = updateTitleDesc(argv[1], "svg.xsd", "ADDDD TITLE", "BINGO BONGO");
+    printf("***%d***\n", pass);
+    
     //setAttribute(svg, GROUP, 0, attrib);
 
  
