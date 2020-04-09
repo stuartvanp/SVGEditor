@@ -1916,195 +1916,208 @@ char* groupListToJSON(const List *list){
     return str;
 }
 
+//stub function not used
 SVGimage* JSONtoSVG(const char* svgString){
     return NULL;
 }
+//stub function not used
 Rectangle* JSONtoRect(const char* svgString){
     return NULL;
 }
+
+//stub function not used
 Circle* JSONtoCircle(const char* svgString){
     return NULL;
 }
 
-
+//creates a JSON string describing an SVG image
 char * createSVGJSON(char * filename, char * schema) {
+    //opens SVG file into struct
     SVGimage * svg = createValidSVGimage(filename, schema);
     if (svg == NULL || validateSVGimage(svg, schema) == false){
-        return NULL;
+        return NULL;  //validtes SVG
     }
-    char * JSON = SVGtoJSON(svg);
+    char * JSON = SVGtoJSON(svg);  //gets JSON
     if (JSON == NULL) {
         return NULL;
     }
     
     JSON[strlen(JSON) - 1] = '\0';
 
-    FILE * fptr = fopen (filename, "r");
+    FILE * fptr = fopen (filename, "r");  //caclulates size of SVG
     fseek(fptr, 0, SEEK_END);
     int size = round (ftell(fptr) / 1000);
     fclose(fptr);
-    JSON = realloc (JSON, sizeof(char) * (strlen(JSON) + 100));
+    JSON = realloc (JSON, sizeof(char) * (strlen(JSON) + 100));  //resizes SVG string
 
     char buffer[250];
-    sprintf(buffer, ",\"size\":%d}", size);
+    sprintf(buffer, ",\"size\":%d}", size); //adds svg size to JSON
 
 
     strcat(JSON, buffer);
     deleteSVGimage(svg);
-    return JSON;
+    return JSON;  //returns JSON string
 }
 
+
+//finds the title of the svg image
 char * getTitle(char * fileName, char * schema){
     SVGimage * svg = createValidSVGimage(fileName, schema);
     if (svg == NULL || validateSVGimage(svg, schema) == false){
-        return NULL;
+        return NULL;  //creates and voldates svg struct
     }
-    char * title = malloc (sizeof(char) * 257);
+    char * title = malloc (sizeof(char) * 257); //creqates title string
     strcpy(title, svg->title);
-    deleteSVGimage(svg);
+    deleteSVGimage(svg); //deletes struct and frees string
     return title;
 
 }
 
+//finds the desc of SVG image
 char * getDesc(char * filename, char * schema){
     SVGimage * svg = createValidSVGimage(filename, schema);
     if (svg == NULL || validateSVGimage(svg, schema) == false){
-        return NULL;
+        return NULL;  //opens and vakidates
     }
     char * desc = malloc (sizeof(char) * 257);
     strcpy(desc, svg->description);
     deleteSVGimage(svg);
-    return desc;
+    return desc;  //deletes struct andn returns desc
 }
-
+//retunrs a JSON string of all paths in top level of SVG
 char * getPathsJSON (char * filename, char * schema) {
     SVGimage * svg = createValidSVGimage (filename, schema);
     if (svg == NULL || validateSVGimage(svg, schema) == false) {
-        return NULL;
+        return NULL;  //opens and validates SVG 
     }
 
     char * str = pathListToJSON(svg->paths);
-    deleteSVGimage(svg);
+    deleteSVGimage(svg); //deletes struct and returns JSON string
     return str;
 }
 
+//returns a JSON string describing all top level 
 char * getRectsJSON(char * filename, char * schema) {
     SVGimage * svg = createValidSVGimage(filename, schema);
     if (svg == NULL || validateSVGimage(svg, schema) == false) {
-        return NULL;
+        return NULL;  //opens SVG and validates
     }
-    char * str = rectListToJSON(svg->rectangles);
-    deleteSVGimage(svg);
+    char * str = rectListToJSON(svg->rectangles);  
+    deleteSVGimage(svg); //deletes struct and returns JSON string
     return str;
 }
 
-
+//gets a JSon string describing all top level circles
 char * getCircsJSON(char * filename, char * schema) {
     SVGimage * svg = createValidSVGimage(filename, schema);
     if (svg == NULL || validateSVGimage(svg, schema) == false) {
-        return NULL;
+        return NULL; //opens SVG and validates 
     }
     char * str = circListToJSON(svg->circles);
-    deleteSVGimage(svg);
+    deleteSVGimage(svg);  //deletes struct and retursnJSON
     return str;
 }
 
+//gets a JSON string describing all top level groups
 char * getGroupsJSON(char * filename, char * schema) {
     SVGimage * svg = createValidSVGimage(filename, schema);
     if (svg == NULL || validateSVGimage(svg, schema) == false) {
-        return NULL;
+        return NULL;  //opens SVG and validates 
     }
     char * str = groupListToJSON(svg->groups);
-    deleteSVGimage(svg);
+    deleteSVGimage(svg);  //deletes SVG and returns JSON
     return str;
 }
 
-
+//gets a JSON string describing all the attributes of rectangle Index
 char * getRectAtt(char * filename, char * schema, int index){
     SVGimage * svg = createValidSVGimage(filename, schema);
     if (svg == NULL || validateSVGimage(svg, schema) == false) {
-        return NULL;
+        return NULL;  //open SVG and validate
     }
-    ListIterator iter = createIterator(svg->rectangles); 
+    ListIterator iter = createIterator(svg->rectangles);   //iterates through the rectangles
     int item = -1;
     Rectangle * rect;
     do{
         item++;
         rect = nextElement(&iter);
     }while (item != index);  //finds element number index
+
     char * str = attrListToJSON(rect->otherAttributes);
-    deleteSVGimage(svg);
+    deleteSVGimage(svg); //deletes struct and returns JSON string
     return str;
 }
 
+//gets a JSON string describing all the attributes of circle Inde
 char * getCircAtt(char * filename, char * schema, int index){
     SVGimage * svg = createValidSVGimage(filename, schema);
     if (svg == NULL || validateSVGimage(svg, schema) == false) {
-        return NULL;
+        return NULL;  //open and validate SVG
     }
     ListIterator iter = createIterator(svg->circles); 
     int item = -1;
-    Circle * circ;
+    Circle * circ;  //iterates through circles until correct 1 is found
 
     do{
         item++;
         circ = nextElement(&iter);
     }while (item != index);  //finds element number index
     char * str = attrListToJSON(circ->otherAttributes);
-    deleteSVGimage(svg);
+    deleteSVGimage(svg);  //returns JSON string and deletes SVG struct
     return str;
 }
-
+//gets a JSON string describing all the attributes of path Index
 char * getPathAtt(char * filename, char * schema, int index){
     SVGimage * svg = createValidSVGimage(filename, schema);
     if (svg == NULL || validateSVGimage(svg, schema) == false) {
-        return NULL;
+        return NULL; //open and validate SVG 
     }
     ListIterator iter = createIterator(svg->paths); 
     int item = -1;
-    Path * path;
+    Path * path;  //finds correct path
 
     do{
         item++;
         path = nextElement(&iter);
     }while (item != index);  //finds element number index
     char * str = attrListToJSON(path->otherAttributes);
-    deleteSVGimage(svg);
+    deleteSVGimage(svg);  //deletes struct and returns JSON string
     return str;
 }
 
-
+//gets a JSON string describing all the attributes of grouo Index
 char * getGroupAtt(char * filename, char * schema, int index){
     SVGimage * svg = createValidSVGimage(filename, schema);
     if (svg == NULL || validateSVGimage(svg, schema) == false) {
-        return NULL;
+        return NULL;  //  opens and validates svg
     }
     ListIterator iter = createIterator(svg->groups); 
     int item = -1;
-    Group * group;
+    Group * group;  //finds correct group
 
     do{
         item++;
         group = nextElement(&iter);
     }while (item != index);  //finds element number index
     char * str = attrListToJSON(group->otherAttributes);
-    deleteSVGimage(svg);
+    deleteSVGimage(svg);  //returns JSON string and deltes struct
     return str;
 }
 
+//updates the title and desc of an SVG image
 bool updateTitleDesc(char * filename, char * schema, char * title, char * desc) {
     SVGimage * svg = createValidSVGimage(filename, schema);
     if (svg == NULL || validateSVGimage(svg, schema) == false) {
+        return 0;  //opens and validates title and desc
+    }
+    if (strlen(title) > 255 || strlen(desc) > 255) {  //validates title and desc
         return 0;
     }
-    if (strlen(title) > 255 || strlen(desc) > 255) {
-        return 0;
-    }
-    strcpy(svg->title, title);
+    strcpy(svg->title, title);  //copies in title and desc
     strcpy(svg->description, desc);
-    bool pass = writeSVGimage(svg, filename);
-    deleteSVGimage(svg);
-    return pass;
+    bool pass = writeSVGimage(svg, filename); //writes sturct to file
+    deleteSVGimage(svg); //deletes struct
+    return pass; //returns boolean if successful
 }
 /*
 int main (int argc, char * argv[]) {
