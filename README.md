@@ -6,6 +6,7 @@ The front of the code was built using Node.js to connect the server and the clie
 
 This project taught me so much, I especially enjoyed the data manipulation that was required to make the backend run, specically doing it in a bare-bones language like C, which does not come with many libraries to make work such as this easier. Memory management and memory efficiency was hugely important as C does not have a garbage collector, so I had to be vigilant with my memory to avoid crashing the servers I wrote the back end on. Overall I feel this project made me a much more competent and confident programmer.
 
+I have attatched a few images of the project running
 
 
 ![SVG EDITOR pic 1](https://github.com/stuartvanp/SVGEditor/blob/master/svg_pics/svg1.png)
