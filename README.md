@@ -10,3 +10,6 @@ This project taught me so much, I especially enjoyed the data manipulation that 
 
 ![SVG EDITOR pic 1](https://github.com/stuartvanp/SVGEditor/blob/master/svg_pics/svg1.png)
 
+![SVG EDITOR pic 2](https://github.com/stuartvanp/SVGEditor/blob/master/svg_pics/svg2.png)
+
+![SVG EDITOR pic 3](https://github.com/stuartvanp/SVGEditor/blob/master/svg_pics/svg3.png)
